@@ -120,8 +120,6 @@ int tcp_rx(struct subuff *sub){
 		switch (stream_data->state) {
 			case 0: // error, this stream has not had connect called yet
 				return 0;
-			case 1: // sent syn, expecting reply
-				return 0;
 			default:
 				return -1;
 		}
