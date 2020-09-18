@@ -33,15 +33,15 @@ struct tcphdr {
     uint16_t dstport;
     uint32_t seq;
     uint32_t ack_seq;
-    uint8_t reserved;
-    uint8_t ack,
-            psh,
-            rst,
-            syn,
-            fin,
-            cwd,
-            ece,
-            urg;
+    unsigned int reserved : 4;
+		unsigned int cwr : 1;
+		unsigned int ece : 1;
+		unsigned int urg : 1;
+    unsigned int ack : 1;
+		unsigned int psh : 1;
+		unsigned int rst : 1;
+		unsigned int syn : 1;
+		unsigned int fin : 1;
     uint16_t win;
     uint16_t csum;
     uint16_t urp;
