@@ -92,17 +92,9 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
-				// 1. Send Initial SYN packet
-				//	- put packet on wire with correct headers (set a random seq)
-				//	- increment state
-				// 2. Recv SYN-ACK
-				//  - recieve packet, check if relevant to this handshake (seq+=1 ack=initial seq)
-				//    - if relevant increment state
-				// 3. Send ACK
-				//  - Send ACK for SYN-ACK (seq=last seq +1 ack=initial random seq +1)
-				//  - Increment state
-
-        //TODO: implement your logic here
+				// CONSTRUCT INITIAL SYN PACKET
+				// SEND THAT PACKET
+				// INCREMENT STATE TO 1
         return -ENOSYS;
     }
     // the default path
@@ -116,12 +108,18 @@ int tcp_rx(struct subuff *sub){
 	struct tcp_stream_info *stream_data = open_streams[tcp_header->dstport];
 
 	if (tcp_header->ack_seq == (stream_data->last_unacked_seq)) {
-   	// VALID PACKET ORDERING
+   	// VALID PACKET ORDERING CHECKED
 		switch (stream_data->state) {
-			case 0: // error, this stream has not had connect called yet
-				return 0;
+			case 0: // NO HANDSHAKE STARTED, CONNECT() NOT CALLED
+				// ERROR MESSAGE
+			case 1: // SENT INITIAL PACKET
+				// VALIDATE RESPONSE
+			case 2: // HANDSHAKE COMPLETED
+				// DEBUG MESSAGE
+			case 3: // ESTABLISHED
+				// WRITE RECIEVED TCP PAYLOAD TO STREAM BUFFER
 			default:
-				return -1;
+				return -1; // placeholder to make errors go away
 		}
     return 0;
   }
