@@ -20,34 +20,39 @@
 #include "utilities.h"
 #include "arpa/inet.h"
 
-struct icmp* icmp_header_decode(struct subuff *sub){ 
-  	struct icmp* _proto_header = sub->head + ETH_HEADER_LEN + IP_HEADER_LEN;
-	_proto_header->checksum = ntohs(_proto_header->checksum);
-	return _proto_header;
-}
-
-void icmp_rx(struct subuff *sub)
-{
-	struct icmp* icmp_packet = icmp_header_decode(sub);
-	int csum = -1;
-	
-	switch(icmp_packet->type) {
-		case ICMP_V4_REPLY:
-			printf("[#] Found Possible ICMP_REPLY Packet\n");
-			goto drop_pkt;
-		case ICMP_V4_ECHO:
-			printf("[#] Found Possible ICMP_ECHO Packet\n");
-			goto drop_pkt;
-	} 
+void icmp_rx(struct subuff *sub){
     //FIXME: implement your ICMP packet processing implementation here
     //figure out various type of ICMP packets, and implement the ECHO response type (icmp_reply)
-	drop_pkt:
-	free_sub(sub);
+    struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);;
+    struct icmp *icmp = (struct icmp *) ip_header->data;
+    if (icmp->type == ICMP_V4_ECHO) {
+      icmp_reply(sub);
+      return;
+    }
+    printf("%s\n", "ICMP did not receive supported type");
+    free_sub(sub);
 }
 
-void icmp_reply(struct subuff *sub)
-{
+void icmp_reply(struct subuff *sub){
     //FIXME: implement your ICMP reply implementation here
     // preapre an ICMP response buffer
     // send it out on ip_ouput(...)
+    struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
+    struct icmp *icmp;
+
+    uint16_t icmp_len = ip_header->len - (ip_header->ihl * 4);
+
+    sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + icmp_len);
+    sub_push(sub, icmp_len);
+
+    icmp = (struct icmp *)sub->data;
+
+    icmp->type = ICMP_V4_REPLY;
+    icmp->checksum = 0;
+    icmp->checksum = do_csum(icmp, icmp_len, 0);
+
+    sub->protocol = IPP_NUM_ICMP;
+
+    ip_output(ip_header->saddr, sub);
+    free_sub(sub);
 }
