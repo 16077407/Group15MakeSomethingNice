@@ -23,7 +23,10 @@
 #include "linklist.h"
 #include "anpwrapper.h"
 #include "init.h"
+#include "tcp.h"
 
+
+void *open_streams[1<<16-1];
 
 static int (*__start_main)(int (*main) (int, char * *, char * *), int argc, \
                            char * * ubp_av, void (*init) (void), void (*fini) (void), \
@@ -63,6 +66,10 @@ int socket(int domain, int type, int protocol) {
 				stream->bytes_rx = 0;
 				stream->last_seen_seq = 0;	
 				stream->addrinfo = NULL;
+				stream->header = malloc(sizeof(struct tcphdr));
+				stream->header->srcport = 0;// set random outgoing port
+
+				open_streams[stream->header->srcport] = stream; // Store for later
 
 				// Return useful FD 
 				LAST_ISSUED_TCP_FD += 1; 
@@ -85,11 +92,31 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
+				// 1. Send Initial SYN packet
+				//	- put packet on wire with correct headers (set a random seq)
+				//	- increment state
+				// 2. Recv SYN-ACK
+				//  - recieve packet, check if relevant to this handshake (seq+=1 ack=initial seq)
+				//    - if relevant increment state
+				// 3. Send ACK
+				//  - Send ACK for SYN-ACK (seq=last seq +1 ack=initial random seq +1)
+				//  - Increment state
+				
         //TODO: implement your logic here
         return -ENOSYS;
     }
     // the default path
     return _connect(sockfd, addr, addrlen);
+}
+
+// ANP Milestone 3
+int tcp_rx(){
+	int port_dst = 0; // get this from packet
+	struct tcp_stream_info *stream_data = open_streams[port_dst];
+}
+
+int tcp_tx(){
+
 }
 
 // TODO: ANP milestone 5 -- implement the send, recv, and close calls
@@ -136,3 +163,4 @@ void _function_override_init()
     _recv = dlsym(RTLD_NEXT, "recv");
     _close = dlsym(RTLD_NEXT, "close");
 }
+

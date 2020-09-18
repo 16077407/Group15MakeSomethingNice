@@ -19,7 +19,9 @@
 #define ANPNETSTACK_ANPWRAPPER_H
 
 #include <sys/socket.h>
+#include "tcp.h"
 
+#define TCP_IN_BUFFER_SIZE 10000000000
 #define MIN_CUSTOM_TCP_FD 10000000
 #define MAX_CUSTOM_TCP_FD 10032000
 int LAST_ISSUED_TCP_FD = MIN_CUSTOM_TCP_FD;
@@ -33,6 +35,8 @@ struct tcp_stream_info {
 	int state;
 	uint32_t last_seen_seq;
 	sockaddr *addrinfo;
+	void *rx_in;
+	struct tcphdr *header;
 };
 
 #endif //ANPNETSTACK_ANPWRAPPER_H
