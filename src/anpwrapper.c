@@ -59,7 +59,11 @@ int socket(int domain, int type, int protocol) {
 				// Setup TCPStream struct to keep track of state and dest
 				
 				struct tcp_stream_info *stream = malloc(sizeof(struct tcp_stream_info));
-				stream->state = 0; // uninitialized 
+				stream->state = 0; // uninitialized
+			 	stream->bytes_tx = 0;
+				stream->bytes_rx = 0;
+				stream->last_seen_seq = 0;	
+				stream->addrinfo = NULL;
 
 				// Return useful FD 
 				LAST_ISSUED_TCP_FD += 1; 
