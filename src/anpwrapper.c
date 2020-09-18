@@ -64,7 +64,7 @@ int socket(int domain, int type, int protocol) {
 				stream->state = 0; // uninitialized
 			 	stream->bytes_tx = 0;
 				stream->bytes_rx = 0;
-				stream->last_seen_seq = 0;
+				stream->last_unacked_seq = 0;
 				stream->addrinfo = NULL;
 				stream->header = malloc(sizeof(struct tcphdr));
 				stream->header->srcport = 0;// set random outgoing port
@@ -111,13 +111,21 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 // ANP Milestone 3
 int tcp_rx(struct subuff *sub){
-	int port_dst = 0; // get this from packet
-	struct tcp_stream_info *stream_data = open_streams[port_dst];
   struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
   struct tcphdr *tcp_header = (struct tcphdr *) ip_header->data;
-  if (tcp_header->ack_seq == (stream_data->seq)-1) {
-    tcp_tx(sub);
-    return;
+	struct tcp_stream_info *stream_data = open_streams[tcp_header->dstport];
+
+	if (tcp_header->ack_seq == (stream_data->last_unacked_seq)) {
+   	// VALID PACKET ORDERING
+		switch (stream_data->state) {
+			case 0: // error, this stream has not had connect called yet
+				return 0;
+			case 1: // sent syn, expecting reply
+				return 0;
+			default:
+				return -1;
+		}
+    return 0;
   }
   printf("%s\n", "TCP SYN ACK was not correct");
   free_sub(sub);

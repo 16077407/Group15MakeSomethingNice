@@ -33,7 +33,7 @@ struct tcp_stream_info {
 	int bytes_tx;
 	int bytes_rx;
 	int state;
-	uint32_t last_seen_seq;
+	uint32_t last_unacked_seq;
 	sockaddr *addrinfo;
 	void *rx_in;
 	struct tcphdr *header;
