@@ -13,7 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 //XXX: _GNU_SOURCE must be defined before including dlfcn to get RTLD_NEXT symbols
 #define _GNU_SOURCE
@@ -29,8 +29,8 @@
 void *open_streams[1<<16-1];
 
 static int (*__start_main)(int (*main) (int, char * *, char * *), int argc, \
-                           char * * ubp_av, void (*init) (void), void (*fini) (void), \
-                           void (*rtld_fini) (void), void (* stack_end));
+        char * * ubp_av, void (*init) (void), void (*fini) (void), \
+        void (*rtld_fini) (void), void (* stack_end));
 
 static ssize_t (*_send)(int fd, const void *buf, size_t n, int flags) = NULL;
 static ssize_t (*_recv)(int fd, void *buf, size_t n, int flags) = NULL;
@@ -59,29 +59,29 @@ int socket(int domain, int type, int protocol) {
     if (is_socket_supported(domain, type, protocol)) {
         //TODO: implement your logic here
 
-				// Setup TCPStream struct to keep track of state and dest
-				struct tcp_stream_info *stream = malloc(sizeof(struct tcp_stream_info));
-				stream->state = 0; // uninitialized
-			 	stream->bytes_tx = 0;
-				stream->bytes_rx = 0;
-				stream->last_unacked_seq = 0;
-				stream->addrinfo = NULL;
-				stream->header = malloc(sizeof(struct tcphdr));
-				stream->header->srcport = 0;// set random outgoing port
+        // Setup TCPStream struct to keep track of state and dest
+        struct tcp_stream_info *stream = malloc(sizeof(struct tcp_stream_info));
+        stream->state = 0; // uninitialized
+        stream->bytes_tx = 0;
+        stream->bytes_rx = 0;
+        stream->last_unacked_seq = 0;
+        stream->addrinfo = NULL;
+        stream->header = malloc(sizeof(struct tcphdr));
+        stream->header->srcport = 0;// set random outgoing port
 
-				open_streams[stream->header->srcport] = stream; // Store for later
+        open_streams[stream->header->srcport] = stream; // Store for later
 
-				// Return useful FD
-				LAST_ISSUED_TCP_FD += 1;
-				stream->fd = LAST_ISSUED_TCP_FD;
+        // Return useful FD
+        LAST_ISSUED_TCP_FD += 1;
+        stream->fd = LAST_ISSUED_TCP_FD;
 
-				if (LAST_ISSUED_TCP_FD>MAX_CUSTOM_TCP_FD) {
-					free(stream);
-					return -ENOSYS;
-				} else {
-					return stream->fd;
-				}
- 				return -ENOSYS;
+        if (LAST_ISSUED_TCP_FD>MAX_CUSTOM_TCP_FD) {
+            free(stream);
+            return -ENOSYS;
+        } else {
+            return stream->fd;
+        }
+        return -ENOSYS;
     }
     // if this is not what anpnetstack support, let it go, let it go!
     return _socket(domain, type, protocol);
@@ -92,9 +92,9 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
-				// CONSTRUCT INITIAL SYN PACKET
-				// SEND THAT PACKET
-				// INCREMENT STATE TO 1
+        // CONSTRUCT INITIAL SYN PACKET
+        // SEND THAT PACKET
+        // INCREMENT STATE TO 1
         return -ENOSYS;
     }
     // the default path
@@ -102,33 +102,47 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 }
 
 // ANP Milestone 3
-int tcp_rx(struct subuff *sub){
-  struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
-  struct tcphdr *tcp_header = (struct tcphdr *) ip_header->data;
-	struct tcp_stream_info *stream_data = open_streams[tcp_header->dstport];
-
-	if (tcp_header->ack_seq == (stream_data->last_unacked_seq)) {
-   	// VALID PACKET ORDERING CHECKED
-		switch (stream_data->state) {
-			case 0: // NO HANDSHAKE STARTED, CONNECT() NOT CALLED
-				// ERROR MESSAGE
-			case 1: // SENT INITIAL PACKET
-				// VALIDATE RESPONSE
-			case 2: // HANDSHAKE COMPLETED
-				// DEBUG MESSAGE
-			case 3: // ESTABLISHED
-				// WRITE RECIEVED TCP PAYLOAD TO STREAM BUFFER
-			default:
-				return -1; // placeholder to make errors go away
-		}
-    return 0;
-  }
-  printf("%s\n", "TCP SYN ACK was not correct");
-  free_sub(sub);
+int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num){
+        return 0;
 }
 
-int tcp_tx(){
+int tcp_syn(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num){
 
+}
+
+int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, void *data, ssize_t data_length){
+
+}
+
+int tcp_rx(struct subuff *sub){
+    struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
+    struct tcphdr *tcp_header = (struct tcphdr *) ip_header->data;
+    struct tcp_stream_info *stream_data = open_streams[tcp_header->dstport];
+
+    if (tcp_header->ack_seq == (stream_data->last_unacked_seq)) {
+        // VALID PACKET ORDERING CHECKED
+        switch (stream_data->state) {
+            case 0: // NO HANDSHAKE STARTED, CONNECT() NOT CALLED
+                printf("[!] Recieved packet on non-connected socket\n");
+                goto drop_pkt;
+            case 1: // EXPECTING SYN-ACK
+                if (tcp_header->ack && tcp_header->syn) {
+                    stream_data->state+=1;
+                    tcp_ack(stream_data, ip_header, tcp_header, sub, tcp_header->seq+1, tcp_header->seq);
+                    stream_data->last_unacked_seq=tcp_header->seq+1;
+                    printf("[=] Recieved SYN-ACK, replyed with ACK and setting stream as ESTABLISHED\n");
+                    break;
+                } else {
+                    goto drop_pkt;
+                }
+            default: // ESTABLISHED connection, appending data to stream buffer
+                goto drop_pkt;
+        }
+    } else { 
+        printf("%s\n", "TCP SYN ACK was not correct");
+    }
+drop_pkt:
+    free_sub(sub);
 }
 
 // TODO: ANP milestone 5 -- implement the send, recv, and close calls
