@@ -59,22 +59,22 @@ int socket(int domain, int type, int protocol) {
     if (is_socket_supported(domain, type, protocol)) {
         //TODO: implement your logic here
 
-				// Setup TCPStream struct to keep track of state and dest 
+				// Setup TCPStream struct to keep track of state and dest
 				struct tcp_stream_info *stream = malloc(sizeof(struct tcp_stream_info));
 				stream->state = 0; // uninitialized
 			 	stream->bytes_tx = 0;
 				stream->bytes_rx = 0;
-				stream->last_seen_seq = 0;	
+				stream->last_seen_seq = 0;
 				stream->addrinfo = NULL;
 				stream->header = malloc(sizeof(struct tcphdr));
 				stream->header->srcport = 0;// set random outgoing port
 
 				open_streams[stream->header->srcport] = stream; // Store for later
 
-				// Return useful FD 
-				LAST_ISSUED_TCP_FD += 1; 
+				// Return useful FD
+				LAST_ISSUED_TCP_FD += 1;
 				stream->fd = LAST_ISSUED_TCP_FD;
-				
+
 				if (LAST_ISSUED_TCP_FD>MAX_CUSTOM_TCP_FD) {
 					free(stream);
 					return -ENOSYS;
@@ -101,7 +101,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 				// 3. Send ACK
 				//  - Send ACK for SYN-ACK (seq=last seq +1 ack=initial random seq +1)
 				//  - Increment state
-				
+
         //TODO: implement your logic here
         return -ENOSYS;
     }
@@ -110,9 +110,17 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 }
 
 // ANP Milestone 3
-int tcp_rx(){
+int tcp_rx(struct subuff *sub){
 	int port_dst = 0; // get this from packet
 	struct tcp_stream_info *stream_data = open_streams[port_dst];
+  struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
+  struct tcphdr *tcp_header = (struct tcphdr *) ip_header->data;
+  if (tcp_header->ack_seq == (stream_data->seq)-1) {
+    tcp_tx(sub);
+    return;
+  }
+  printf("%s\n", "TCP SYN ACK was not correct");
+  free_sub(sub);
 }
 
 int tcp_tx(){
@@ -163,4 +171,3 @@ void _function_override_init()
     _recv = dlsym(RTLD_NEXT, "recv");
     _close = dlsym(RTLD_NEXT, "close");
 }
-

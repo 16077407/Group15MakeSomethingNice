@@ -23,7 +23,7 @@
 void icmp_rx(struct subuff *sub){
     //FIXME: implement your ICMP packet processing implementation here
     //figure out various type of ICMP packets, and implement the ECHO response type (icmp_reply)
-    struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);;
+    struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
     struct icmp *icmp = (struct icmp *) ip_header->data;
     if (icmp->type == ICMP_V4_ECHO) {
       icmp_reply(sub);
