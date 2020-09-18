@@ -55,7 +55,23 @@ static int is_socket_supported(int domain, int type, int protocol)
 int socket(int domain, int type, int protocol) {
     if (is_socket_supported(domain, type, protocol)) {
         //TODO: implement your logic here
-        return -ENOSYS;
+
+				// Setup TCPStream struct to keep track of state and dest
+				
+				struct tcp_stream_info *stream = malloc(sizeof(struct tcp_stream_info));
+				stream->state = 0; // uninitialized 
+
+				// Return useful FD 
+				LAST_ISSUED_TCP_FD += 1; 
+				stream->fd = LAST_ISSUED_TCP_FD;
+				
+				if (LAST_ISSUED_TCP_FD>MAX_CUSTOM_TCP_FD) {
+					free(stream);
+					return -ENOSYS;
+				} else {
+					return stream->fd;
+				}
+ 				return -ENOSYS;
     }
     // if this is not what anpnetstack support, let it go, let it go!
     return _socket(domain, type, protocol);
@@ -64,7 +80,7 @@ int socket(int domain, int type, int protocol) {
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
-    bool is_anp_sockfd = false;
+    bool is_anp_sockfd = sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
         //TODO: implement your logic here
         return -ENOSYS;

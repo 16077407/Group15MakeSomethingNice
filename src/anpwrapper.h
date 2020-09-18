@@ -18,6 +18,19 @@
 #ifndef ANPNETSTACK_ANPWRAPPER_H
 #define ANPNETSTACK_ANPWRAPPER_H
 
+
+#define MIN_CUSTOM_TCP_FD 10000000
+#define MAX_CUSTOM_TCP_FD 10032000
+int LAST_ISSUED_TCP_FD = MIN_CUSTOM_TCP_FD;
+
 void _function_override_init();
+
+struct tcp_stream_info {
+	int fd;
+	int bytes_tx;
+	int bytes_rx;
+	int state;
+	sockaddr *addrinfo;
+};
 
 #endif //ANPNETSTACK_ANPWRAPPER_H
