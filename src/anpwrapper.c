@@ -96,7 +96,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
         printf("[!] CHECK is_anp\n");
-        struct tcp_stream_info *stream_data = open_streams_fd[sockfd];
+        /* struct tcp_stream_info *stream_data = open_streams_fd[sockfd]; */
         
         struct subuff *sub = alloc_sub(TCP_HDR_LEN);
         sub_reserve(sub, TCP_HDR_LEN);
