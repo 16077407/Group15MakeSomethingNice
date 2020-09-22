@@ -98,11 +98,12 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         printf("[!] CHECK is_anp\n");
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd];
         
-        struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN);
-        sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN);
+        struct subuff *sub = alloc_sub(TCP_HDR_LEN);
+        sub_reserve(sub, TCP_HDR_LEN);
+
+        printf("[!] CHECK alloc_sub\n");
         sub->protocol = htons(ETH_P_IP);
-        struct iphdr *ip_hdr = (struct iphdr*)(sub->head + ETH_HDR_LEN);
-        struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
+        struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head);
         printf("[!] CHECK set_sub\n");
         // Set TCP Header Values
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
