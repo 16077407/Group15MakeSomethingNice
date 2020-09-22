@@ -92,8 +92,10 @@ int socket(int domain, int type, int protocol) {
 
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
+    printf("[!] CHECK 1\n");
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
+        printf("[!] CHECK is_anp\n");
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd];
         
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN);
@@ -101,7 +103,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         sub->protocol = htons(ETH_P_IP);
         struct iphdr *ip_hdr = (struct iphdr*)(sub->head + ETH_HDR_LEN);
         struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
-        
+        printf("[!] CHECK set_sub\n");
         // Set TCP Header Values
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
         printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
