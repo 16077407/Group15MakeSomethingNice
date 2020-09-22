@@ -25,7 +25,8 @@
 #include "init.h"
 #include "tcp.h"
 
-void *open_streams[1<<16-1]; 
+void *open_streams[1<<16-1];
+void *open_streams_fd[MAX_CUSTOM_TCP_FD-MIN_CUSTOM_TCP_FD];
 int LAST_ISSUED_TCP_FD = MIN_CUSTOM_TCP_FD;
 
 static int (*__start_main)(int (*main) (int, char * *, char * *), int argc, \
@@ -69,11 +70,12 @@ int socket(int domain, int type, int protocol) {
         stream->header = malloc(sizeof(struct tcphdr));
         stream->header->srcport = 0;// set random outgoing port
 
-        open_streams[stream->header->srcport] = stream; // Store for later
+        open_streams[stream->header->srcport] = stream; // Store for later by port
 
         // Return useful FD
         LAST_ISSUED_TCP_FD += 1;
         stream->fd = LAST_ISSUED_TCP_FD;
+        open_streams_fd[stream->fd];
 
         if (LAST_ISSUED_TCP_FD>MAX_CUSTOM_TCP_FD) {
             free(stream);
@@ -91,10 +93,17 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
-        // CONSTRUCT INITIAL SYN PACKET
-        // SEND THAT PACKET
-        // INCREMENT STATE TO 1
-        return -ENOSYS;
+        struct tcp_stream_info *stream_data = open_streams_fd[sockfd];
+        
+        struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN);
+        sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN);
+        sub->protocol = htons(ETH_P_IP);
+        struct iphdr *ip_hdr = (struct iphdr*)(sub->head + ETH_HDR_LEN);
+        struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
+        
+        // Set TCP Header Values
+        /* print("[!] I believe the destination addr is" ); */
+        /* ip_output(ntohl((struct addr_in *)addr), sub); */
     }
     // the default path
     return _connect(sockfd, addr, addrlen);
@@ -103,10 +112,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 // ANP Milestone 3
 int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num){
         return 0;
-}
-
-int tcp_syn(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num){
-
 }
 
 int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, void *data, ssize_t data_length){
@@ -121,10 +126,7 @@ int tcp_rx(struct subuff *sub){
     if (tcp_header->ack_seq == (stream_data->last_unacked_seq)) {
         // VALID PACKET ORDERING CHECKED
         switch (stream_data->state) {
-            case 0: // NO HANDSHAKE STARTED, CONNECT() NOT CALLED
-                printf("[!] Recieved packet on non-connected socket\n");
-                goto drop_pkt;
-            case 1: // EXPECTING SYN-ACK
+            case 0: // EXPECTING SYN-ACK
                 if (tcp_header->ack && tcp_header->syn) {
                     stream_data->state+=1;
                     tcp_ack(stream_data, ip_header, tcp_header, sub, tcp_header->seq+1, tcp_header->seq);
