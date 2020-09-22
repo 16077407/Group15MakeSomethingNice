@@ -92,23 +92,28 @@ int socket(int domain, int type, int protocol) {
 
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
-    printf("[!] CHECK 1\n");
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
-        printf("[!] CHECK is_anp\n");
-        struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
-        
+        struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD]; 
         struct subuff *sub = alloc_sub(TCP_HDR_LEN);
-        sub_reserve(sub, TCP_HDR_LEN);
-
-        printf("[!] CHECK alloc_sub\n");
+        sub_reserve(sub, TCP_HDR_LEN); 
         struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head);
-        printf("[!] CHECK set_sub\n");
+
         // Set TCP Header Values
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
         printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
-        /* print("[!] I believe the destination addr is" ); */
-        /* ip_output(ntohl((struct addr_in *)addr), sub); */
+        tcp_hdr->srcport = 4224;
+        tcp_hdr->dstport = ((struct sockaddr_in *)addr)->sin_port;
+        tcp_hdr->seq = 1;
+        tcp_hdr->ack_seq = 0;
+        tcp_hdr->data_offset = 0;
+        tcp_hdr->reserved = 0;
+        tcp_hdr->syn=1;
+        tcp_hdr->win=0;
+        tcp_hdr->csum = -1;
+
+        printf("[=] Passing made packet onto ip_output...\n");
+        ip_output(dst_addr, sub);
     }
     // the default path
     return _connect(sockfd, addr, addrlen);
