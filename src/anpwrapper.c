@@ -18,6 +18,7 @@
 //XXX: _GNU_SOURCE must be defined before including dlfcn to get RTLD_NEXT symbols
 #define _GNU_SOURCE
 
+#include <netinet/in.h>
 #include <dlfcn.h>
 #include "systems_headers.h"
 #include "linklist.h"
@@ -102,6 +103,8 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
         
         // Set TCP Header Values
+        uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
+        printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
         /* print("[!] I believe the destination addr is" ); */
         /* ip_output(ntohl((struct addr_in *)addr), sub); */
     }
