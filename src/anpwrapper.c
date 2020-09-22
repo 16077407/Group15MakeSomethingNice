@@ -189,3 +189,8 @@ void _function_override_init()
     _recv = dlsym(RTLD_NEXT, "recv");
     _close = dlsym(RTLD_NEXT, "close");
 }
+
+struct sockaddr {
+    ushort sa_family;
+    char sa_data
+}
