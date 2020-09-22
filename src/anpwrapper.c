@@ -102,7 +102,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         sub_reserve(sub, TCP_HDR_LEN);
 
         printf("[!] CHECK alloc_sub\n");
-        sub->protocol = htons(ETH_P_IP);
         struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head);
         printf("[!] CHECK set_sub\n");
         // Set TCP Header Values
