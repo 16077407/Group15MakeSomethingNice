@@ -190,7 +190,3 @@ void _function_override_init()
     _close = dlsym(RTLD_NEXT, "close");
 }
 
-struct sockaddr {
-    ushort sa_family;
-    char sa_data
-}
