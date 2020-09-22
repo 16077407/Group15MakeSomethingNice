@@ -20,8 +20,7 @@
 #include "utilities.h"
 #include "icmp.h"
 
-int ip_rx(struct subuff *sub)
-{
+int ip_rx(struct subuff *sub){
     struct iphdr *ih = IP_HDR_FROM_SUB(sub);
     uint16_t csum = -1;
 
@@ -61,7 +60,7 @@ int ip_rx(struct subuff *sub)
             return 0;
         case IPP_TCP:
             printf("incoming TCP packet, further logic NYI \n");
-						tcp_rx(sub);
+            tcp_rx(sub);
             goto drop_pkt;
         default:
             printf("Error: Unknown IP header proto %d \n", ih->proto);

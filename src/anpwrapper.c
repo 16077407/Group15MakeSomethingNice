@@ -87,8 +87,7 @@ int socket(int domain, int type, int protocol) {
     return _socket(domain, type, protocol);
 }
 
-int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
-{
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){

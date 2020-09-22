@@ -36,7 +36,6 @@ struct icmp {
 
 #define ICMP_HEADER_LEN = sizeof(struct icmp);
 
-struct icmp *icmp_header_decode(struct subuff *buff)
 void icmp_rx(struct subuff *sub);
 void icmp_reply(struct subuff *sub);
 
