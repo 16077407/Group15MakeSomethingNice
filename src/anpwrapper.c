@@ -119,6 +119,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
             if (return_ip_out!=-11) return 0;
             counter+=1;
+            sleep(1);
         }
     }
     // the default path
