@@ -93,7 +93,7 @@ int socket(int domain, int type, int protocol) {
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     printf("[!] CHECK 1\n");
-    bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd>MIN_CUSTOM_TCP_FD;
+    bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
         printf("[!] CHECK is_anp\n");
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd];
