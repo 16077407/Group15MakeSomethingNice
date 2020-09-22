@@ -5,6 +5,7 @@
 #include "subuff.h"
 #include "ethernet.h"
 #include "ip.h"
+#include "anpwrapper.h"
 
 #define TCP_ACK 0x01
 #define TCP_PSH 0x02
@@ -48,14 +49,6 @@ struct tcphdr {
     uint16_t urp;
     uint8_t data[];
 } __attribute__((packed));
-
-
-
-int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num);
-
-int tcp_syn(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num);
-
-int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, void *data, ssize_t data_length);
 
 
 int socket(int domain, int type, int protocol);

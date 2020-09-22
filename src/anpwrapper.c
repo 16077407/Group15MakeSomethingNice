@@ -25,8 +25,8 @@
 #include "init.h"
 #include "tcp.h"
 
-
-void *open_streams[1<<16-1];
+void *open_streams[1<<16-1]; 
+int LAST_ISSUED_TCP_FD = MIN_CUSTOM_TCP_FD;
 
 static int (*__start_main)(int (*main) (int, char * *, char * *), int argc, \
         char * * ubp_av, void (*init) (void), void (*fini) (void), \

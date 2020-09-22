@@ -24,7 +24,6 @@
 #define TCP_IN_BUFFER_SIZE 10000000000
 #define MIN_CUSTOM_TCP_FD 10000000
 #define MAX_CUSTOM_TCP_FD 10032000
-int LAST_ISSUED_TCP_FD = MIN_CUSTOM_TCP_FD;
 
 void _function_override_init();
 
@@ -38,5 +37,13 @@ struct tcp_stream_info {
 	void *rx_in;
 	struct tcphdr *header;
 };
+
+int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num);
+
+int tcp_syn(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num);
+
+int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, void *data, ssize_t data_length);
+
+int tcp_rx(struct subuff *sub);
 
 #endif //ANPNETSTACK_ANPWRAPPER_H
