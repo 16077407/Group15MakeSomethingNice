@@ -112,9 +112,14 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->win=0;
         tcp_hdr->csum = -1;
 
-        printf("[=] Passing made packet onto ip_output...\n");
-        int return_ip_out = ip_output(dst_addr, sub);
-        printf("[=] Result of ip_output: %d\n", return_ip_out);
+        int counter = 0;
+        while(counter<3){
+            printf("[#%d] Passing made packet onto ip_output...\n", counter);
+            int return_ip_out = ip_output(dst_addr, sub);
+            printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
+            if (return_ip_out!=-11) return 0;
+            counter+=1;
+        }
     }
     // the default path
     return _connect(sockfd, addr, addrlen);
