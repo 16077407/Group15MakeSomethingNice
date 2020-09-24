@@ -47,7 +47,6 @@ struct tcphdr {
     uint16_t win;
     uint16_t csum;
     uint16_t urp;
-    uint8_t data[];
 } __attribute__((packed));
 
 

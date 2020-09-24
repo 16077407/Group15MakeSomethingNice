@@ -97,12 +97,13 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD]; 
         struct subuff *sub = alloc_sub(TCP_HDR_LEN+10);
         sub_reserve(sub, TCP_HDR_LEN+10);
+        sub->protocol = 6; //Set TCP protocol
         struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head);
 
         // Set TCP Header Values
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
         printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
-        tcp_hdr->srcport = 4224;
+        tcp_hdr->srcport = 4224; // FIXME: Set to random 16bit wide (u)integer
         tcp_hdr->dstport = ((struct sockaddr_in *)addr)->sin_port;
         tcp_hdr->seq = 1;
         tcp_hdr->ack_seq = 0;
@@ -110,8 +111,9 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->reserved = 0;
         tcp_hdr->syn=1;
         tcp_hdr->win=0;
-        tcp_hdr->csum = -1;
-
+        tcp_hdr->csum = -1; // FIXME: Set to actual valid csum
+        tcp_hdr->urp = 0;
+        
         int counter = 0;
         while(counter<3){
             printf("[#%d] Passing made packet onto ip_output...\n", counter);
