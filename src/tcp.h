@@ -20,7 +20,7 @@
     do {                                                                \
         printf("TCP" \
                "Flags [A%uP%uR%uS%uF%u], seq %u, ack %u, win %u", \
-               hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin, hdr->seq, \
+               hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin, hdr->seq, \
                hdr->ack, hdr->win); \
     } while (0)
 
@@ -34,7 +34,7 @@ struct tcphdr {
     uint16_t dstport;
     uint32_t seq;
     uint32_t ack_seq;
-    unsigned int data_offset :4;
+    unsigned int data_offset : 4;
     unsigned int reserved : 4;
     unsigned int cwr : 1;
     unsigned int ece : 1;

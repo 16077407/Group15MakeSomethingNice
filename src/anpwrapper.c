@@ -101,10 +101,11 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head);
 
         // Set TCP Header Values
-        uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
+        uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
         printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
-        tcp_hdr->srcport = 4224; // FIXME: Set to random 16bit wide (u)integer
-        tcp_hdr->dstport = ((struct sockaddr_in *)addr)->sin_port;
+
+        tcp_hdr->srcport = htons(4224); // FIXME: Set to random 16bit wide (u)integer
+        tcp_hdr->dstport = htons(((struct sockaddr_in *)addr)->sin_port);
         tcp_hdr->seq = 1;
         tcp_hdr->ack_seq = 0;
         tcp_hdr->data_offset = 0;
@@ -113,13 +114,15 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->win=0;
         tcp_hdr->csum = -1; // FIXME: Set to actual valid csum
         tcp_hdr->urp = 0;
-        
+
         int counter = 0;
         while(counter<3){
             printf("[#%d] Passing made packet onto ip_output...\n", counter);
+
             int return_ip_out = ip_output(dst_addr, sub);
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
             if (return_ip_out!=-11) return 0;
+
             counter+=1;
             sleep(1);
         }
