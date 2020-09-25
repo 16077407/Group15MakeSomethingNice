@@ -44,4 +44,6 @@ int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp,
 
 int tcp_rx(struct subuff *sub);
 
+uint16_t rand_uint16();
+
 #endif //ANPNETSTACK_ANPWRAPPER_H

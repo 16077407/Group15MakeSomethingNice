@@ -1,0 +1,4 @@
+/usr/local/lib/libanpnetstack.so.1.0.1
+/usr/local/lib/libanpnetstack.so.1
+/usr/local/lib/libanpnetstack.so
+/usr/local/include/anpnetstack.h

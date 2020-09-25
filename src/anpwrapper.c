@@ -107,7 +107,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
         printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
         
-        randomNumber();
+        uint16_t x = rand_uint16();
         tcp_hdr->srcport = htons(4224); // FIXME: Set to random 16bit wide (u)integer
         tcp_hdr->dstport = htons(((struct sockaddr_in *)addr)->sin_port);
         tcp_hdr->seq = 1;
@@ -217,11 +217,13 @@ void _function_override_init()
     _close = dlsym(RTLD_NEXT, "close");
 }
 
-int randomNumber(void){
-    srand(time(0));
-    for(int i = 0; i < 4; i++){
-        printf("Random Number: %d ", rand() );
-    }
-    return 0;
-}
+
+uint16_t  rand_uint16(){
+    uint16_t r = 0;
+    for(int i = 0; i<16; i++){
+    r = r*2 + rand()%2;
+    } 
+    printf("Random number 16 bits unsigned int: %d ", r );	
+    return r;
+} 
 
