@@ -25,6 +25,9 @@
 #include "anpwrapper.h"
 #include "init.h"
 #include "tcp.h"
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <time.h> 
 
 void *open_streams[1<<16-1];
 void *open_streams_fd[MAX_CUSTOM_TCP_FD-MIN_CUSTOM_TCP_FD];
@@ -103,7 +106,8 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         // Set TCP Header Values
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
         printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
-
+        
+        randomNumber();
         tcp_hdr->srcport = htons(4224); // FIXME: Set to random 16bit wide (u)integer
         tcp_hdr->dstport = htons(((struct sockaddr_in *)addr)->sin_port);
         tcp_hdr->seq = 1;
@@ -211,5 +215,13 @@ void _function_override_init()
     _send = dlsym(RTLD_NEXT, "send");
     _recv = dlsym(RTLD_NEXT, "recv");
     _close = dlsym(RTLD_NEXT, "close");
+}
+
+int randomNumber(void){
+    srand(time(0));
+    for(int i = 0; i < 4; i++){
+        printf("Random Number: %d ", rand() );
+    }
+    return 0;
 }
 
