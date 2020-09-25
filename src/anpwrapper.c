@@ -124,6 +124,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
             printf("[#%d] Passing made packet onto ip_output...\n", counter);
 
             int return_ip_out = ip_output(dst_addr, sub);
+            printf("dst_addr: %d\n", sub );
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
             if (return_ip_out!=-11) return 0;
 
