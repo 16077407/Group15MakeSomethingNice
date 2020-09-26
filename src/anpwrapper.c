@@ -100,8 +100,9 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD]; 
 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN);
+        sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN);
         sub->protocol = 6; //Set TCP protocol
-        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN);
+        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
 
         // Set TCP Header Values
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
