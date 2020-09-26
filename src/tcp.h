@@ -19,9 +19,9 @@
 #define debug_tcp_hdr(hdr)                                  \
     do {                                                                \
         printf("TCP" \
-               "Flags [A%uP%uR%uS%uF%u], seq %u, ack %u, win %u\n", \
-               hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin, hdr->seq, \
-               hdr->ack, hdr->win); \
+               "dst_port: %d, src_port: %d, seq %u, ack %u, win %u, Flags [A%uP%uR%uS%uF%u],\n", \
+               hdr->dstport, hdr->srcport, hdr->seq, hdr->ack, \
+               hdr->win, hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin,); \
     } while (0)
 
 
