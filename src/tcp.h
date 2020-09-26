@@ -19,7 +19,7 @@
 #define debug_tcp_hdr(hdr)                                  \
     do {                                                                \
         printf("TCP" \
-               "Flags [A%uP%uR%uS%uF%u], seq %u, ack %u, win %u", \
+               "Flags [A%uP%uR%uS%uF%u], seq %u, ack %u, win %u\n", \
                hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin, hdr->seq, \
                hdr->ack, hdr->win); \
     } while (0)
