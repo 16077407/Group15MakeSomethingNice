@@ -19,13 +19,13 @@
 #define debug_tcp_hdr(hdr)                                  \
     do {                                                                \
         printf("TCP: " \
-               "dst_port: %d, src_port: %d, seq %u, ack %u, win %u, Flags [A%uP%uR%uS%uF%u],\n", \
+               "dst_port: %d, src_port: %d, seq %u, ack %u, win %u, Flags [A%uP%uR%uS%uF%u], csum=%hx\n", \
                hdr->dstport, hdr->srcport, hdr->seq, hdr->ack, \
-               hdr->win, hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin); \
+               hdr->win, hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin, hdr->csum); \
     } while (0)
 
 
-#else
+#else
 #define debug_tcp_hdr(hdr, socket, sub)
 #endif
 

@@ -25,6 +25,7 @@
 #include "anpwrapper.h"
 #include "init.h"
 #include "tcp.h"
+#include "utilities.h"
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <time.h> 
@@ -116,7 +117,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->data_offset = 0;
         tcp_hdr->syn=1;
         tcp_hdr->win=0;
-        tcp_hdr->csum = -1; // FIXME: Set to actual valid csum
+        tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr); // FIXME: Set to actual valid csum
         tcp_hdr->urp = 0;
 
         int counter = 0;
