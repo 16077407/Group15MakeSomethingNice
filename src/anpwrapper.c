@@ -108,7 +108,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
         
         uint16_t x = rand_uint16();
-        tcp_hdr->srcport = htons(4224); // FIXME: Set to random 16bit wide (u)integer
+        tcp_hdr->srcport = htons(x); // FIXME: Set to random 16bit wide (u)integer
         tcp_hdr->dstport = htons(((struct sockaddr_in *)addr)->sin_port);
         tcp_hdr->seq = 1;
         tcp_hdr->ack_seq = 0;
@@ -123,8 +123,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         while(counter<3){
             printf("[#%d] Passing made packet onto ip_output...\n", counter);
 
-            int return_ip_out = ip_output(dst_addr, sub);
-            printf("dst_addr: %d\n", sub );
+            int return_ip_out = ip_output(htonl(dst_addr), sub);
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
             if (return_ip_out!=-11) return 0;
 
