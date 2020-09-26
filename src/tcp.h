@@ -21,7 +21,7 @@
         printf("TCP" \
                "dst_port: %d, src_port: %d, seq %u, ack %u, win %u, Flags [A%uP%uR%uS%uF%u],\n", \
                hdr->dstport, hdr->srcport, hdr->seq, hdr->ack, \
-               hdr->win, hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin,); \
+               hdr->win, hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin); \
     } while (0)
 
 
