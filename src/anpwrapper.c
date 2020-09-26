@@ -98,10 +98,10 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD]; 
-        struct subuff *sub = alloc_sub(TCP_HDR_LEN+6);
-        sub_reserve(sub, TCP_HDR_LEN+6);
+
+        struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN);
         sub->protocol = 6; //Set TCP protocol
-        struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head);
+        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN);
 
         // Set TCP Header Values
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
@@ -122,7 +122,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         while(counter<3){
             printf("[#%d] Passing made packet onto ip_output...\n", counter);
 
-            int return_ip_out = ip_output(htonl(dst_addr), sub);
+            int return_ip_out = ip_output(dst_addr, sub);
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
             if (return_ip_out>=0) {
                 debug_tcp_hdr(tcp_hdr);
