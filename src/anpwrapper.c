@@ -98,8 +98,8 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD]; 
-        struct subuff *sub = alloc_sub(TCP_HDR_LEN+1);
-        sub_reserve(sub, TCP_HDR_LEN+1);
+        struct subuff *sub = alloc_sub(TCP_HDR_LEN+6);
+        sub_reserve(sub, TCP_HDR_LEN+6);
         sub->protocol = 6; //Set TCP protocol
         struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head);
 
