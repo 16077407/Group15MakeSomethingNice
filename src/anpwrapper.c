@@ -128,6 +128,12 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
             if (return_ip_out>=0) {
                 debug_tcp_hdr(tcp_hdr);
+                while(counter<10){
+                    printf("[Repeating packet #%d] Sent.\n", counter);
+                    return_ip_out = ip_output(htonl(dst_addr), sub); 
+                    printf("[Repeating packet #%d] ip_output ret: %d\n", counter, return_ip_out);
+                    counter+=1;
+                }
                 return 0;
             }
             if (return_ip_out==-1 && counter>0){
