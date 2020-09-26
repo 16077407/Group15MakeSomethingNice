@@ -102,7 +102,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub->protocol = 6; //Set TCP protocol
-        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN + 6);
+        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
 
         // Set TCP Header Values
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
@@ -129,6 +129,10 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
             if (return_ip_out>=0) {
                 debug_tcp_hdr(tcp_hdr);
                 return 0;
+            }
+            if (return_ip_out==-1 && counter>0){
+                printf("[!] No route to host?\n");
+                return -1;
             }
 
             counter+=1;
