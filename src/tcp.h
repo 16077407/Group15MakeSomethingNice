@@ -16,11 +16,11 @@
 
 #define DEBUG_TCP
 #ifdef DEBUG_TCP
-#define debug_tcp_hdr(hdr, socket, sub)                                  \
+#define debug_tcp_hdr(hdr)                                  \
     do {                                                                \
         printf("TCP" \
                "Flags [A%uP%uR%uS%uF%u], seq %u, ack %u, win %u", \
-               hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin, hdr->seq, \
+               hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin, hdr->seq, \
                hdr->ack, hdr->win); \
     } while (0)
 

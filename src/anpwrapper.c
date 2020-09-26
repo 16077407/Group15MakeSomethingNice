@@ -98,8 +98,8 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD]; 
-        struct subuff *sub = alloc_sub(TCP_HDR_LEN+10);
-        sub_reserve(sub, TCP_HDR_LEN+10);
+        struct subuff *sub = alloc_sub(TCP_HDR_LEN+1);
+        sub_reserve(sub, TCP_HDR_LEN+1);
         sub->protocol = 6; //Set TCP protocol
         struct tcphdr *tcp_hdr = (struct tcphdr*)(sub->head);
 
@@ -125,7 +125,10 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 
             int return_ip_out = ip_output(htonl(dst_addr), sub);
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
-            if (return_ip_out!=-11) return 0;
+            if (return_ip_out!=-11) {
+                debug_tcp_hdr(tcp_hdr);
+                return 0;
+            }
 
             counter+=1;
             sleep(1);
@@ -145,6 +148,7 @@ int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp,
 }
 
 int tcp_rx(struct subuff *sub){
+    printf("\n[!] RECIEVED TCP PACKET\n\n");
     struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
     struct tcphdr *tcp_header = (struct tcphdr *) ip_header->data;
     struct tcp_stream_info *stream_data = open_streams[tcp_header->dstport];
