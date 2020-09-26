@@ -113,7 +113,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->seq = 1;
         tcp_hdr->ack_seq = 0;
         tcp_hdr->data_offset = 0;
-        tcp_hdr->reserved = 0;
         tcp_hdr->syn=1;
         tcp_hdr->win=0;
         tcp_hdr->csum = -1; // FIXME: Set to actual valid csum
@@ -125,7 +124,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 
             int return_ip_out = ip_output(htonl(dst_addr), sub);
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
-            if (return_ip_out!=-11) {
+            if (return_ip_out>=0) {
                 debug_tcp_hdr(tcp_hdr);
                 return 0;
             }
