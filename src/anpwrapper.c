@@ -104,6 +104,10 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub->protocol = 6; //Set TCP protocol
 
+        // Set/get the destination addr
+        uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
+        printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
+
         // Set TCP Header Values
         struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
         uint16_t x = rand_uint16();
@@ -116,10 +120,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->win=0;
         tcp_hdr->urp = 0;
         tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr); // FIXME: Set to actual valid csum
-
-        // Set/get the destination addr
-        uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
-        printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
 
         int counter = 0;
         int return_ip_out;
