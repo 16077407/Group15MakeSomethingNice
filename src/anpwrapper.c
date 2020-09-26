@@ -103,12 +103,9 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub->protocol = 6; //Set TCP protocol
-        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
 
         // Set TCP Header Values
-        uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
-        printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
-        
+        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
         uint16_t x = rand_uint16();
         tcp_hdr->srcport = htons(x); // FIXME: Set to random 16bit wide (u)integer
         tcp_hdr->dstport = htons(((struct sockaddr_in *)addr)->sin_port);
@@ -117,8 +114,12 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->data_offset = 0;
         tcp_hdr->syn=1;
         tcp_hdr->win=0;
-        tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr); // FIXME: Set to actual valid csum
         tcp_hdr->urp = 0;
+        tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr); // FIXME: Set to actual valid csum
+
+        // Set/get the destination addr
+        uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
+        printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
 
         int counter = 0;
         int return_ip_out;
@@ -168,7 +169,7 @@ int tcp_rx(struct subuff *sub){
     if (tcp_header->ack_seq == (stream_data->last_unacked_seq)) {
         // VALID PACKET ORDERING CHECKED
         switch (stream_data->state) {
-            case 0: // EXPECTING SYN-ACK
+            case 1: // EXPECTING SYN-ACK
                 if (tcp_header->ack && tcp_header->syn) {
                     stream_data->state+=1;
                     tcp_ack(stream_data, ip_header, tcp_header, sub, tcp_header->seq+1, tcp_header->seq);
@@ -239,7 +240,7 @@ uint16_t  rand_uint16(){
     for(int i = 0; i<16; i++){
     r = r*2 + rand()%2;
     } 
-    printf("Random number 16 bits unsigned int: %d ", r );	
+    printf("[#] Random number 16 bits unsigned int: %d\n", r );	
     return r;
 } 
 
