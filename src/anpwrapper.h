@@ -28,14 +28,13 @@
 void _function_override_init();
 
 struct tcp_stream_info {
-	int fd;
-	int bytes_tx;
-	int bytes_rx;
-	int state;
-	uint32_t last_unacked_seq;
-	struct sockaddr *addrinfo;
-	void *rx_in;
-	struct tcphdr *header;
+    int fd;
+    int bytes_tx;
+    int bytes_rx;
+    int state;
+    uint32_t last_unacked_seq;
+    uint16_t stream_port;
+    void *rx_in;
 };
 
 struct subuff *tcp_syn(struct tcp_stream_info* stream_data, uint32_t dst_addr, uint16_t dst_port);

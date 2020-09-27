@@ -69,11 +69,9 @@ int socket(int domain, int type, int protocol) {
         stream->bytes_tx = 0;
         stream->bytes_rx = 0;
         stream->last_unacked_seq = 0;
-        stream->addrinfo = NULL;
-        stream->header = malloc(sizeof(struct tcphdr));
-        stream->header->srcport = 0;// set random outgoing port
+        stream->stream_port = rand_uint16();
 
-        open_streams_port[stream->header->srcport] = stream; // Store for later by port
+        open_streams_port[stream->stream_port] = stream; // Store for later by port
 
         // Return useful FD
         LAST_ISSUED_TCP_FD += 1;
@@ -152,7 +150,7 @@ struct subuff *tcp_syn(struct tcp_stream_info* stream_data, uint32_t dst_addr, u
 
         // Set TCP Header Values
         struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
-        tcp_hdr->srcport = htons(rand_uint16());
+        tcp_hdr->srcport = stream_data->stream_port;
         tcp_hdr->dstport = htons(dst_port);
         tcp_hdr->seq = 1;
         tcp_hdr->ack_seq = 0;
