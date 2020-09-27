@@ -98,29 +98,18 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     if(is_anp_sockfd){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
 
-        struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
-        sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
-        sub->protocol = IPP_TCP; //Set TCP protocol
 
         // Set/get the destination addr
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
-        printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
+        uint16_t dst_port = ((struct sockaddr_in *)addr)->sin_port;
+        printf("[!] I believe the dest addr is: %s:%d\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr), dst_port);
+
         printf("[?] Sending lookup request for dst_addr...");
+        struct subuff* sub = tcp_syn(stream_data, dst_addr, dst_port);
         int return_ip_out = ip_output(htonl(dst_addr), sub);
         printf("got return code %d.\n", return_ip_out);
         sub_reset_header(sub);
 
-        // Set TCP Header Values
-        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
-        tcp_hdr->srcport = htons(rand_uint16());
-        tcp_hdr->dstport = htons(((struct sockaddr_in *)addr)->sin_port);
-        tcp_hdr->seq = 1;
-        tcp_hdr->ack_seq = 0;
-        tcp_hdr->data_offset = 0;
-        tcp_hdr->syn=1;
-        tcp_hdr->win=0;
-        tcp_hdr->urp = 0;
-        tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr); // FIXME: Set to actual valid csum
 
         int counter = 0;
         while(counter<3){
@@ -129,7 +118,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
             return_ip_out = ip_output(htonl(dst_addr), sub);
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
             if (return_ip_out>=0) {
-                debug_tcp_hdr(tcp_hdr);
                 /* while(counter<10){ */
                     /* printf("[Repeating packet #%d] Sent.\n", counter); */
                     /* return_ip_out = ip_output(htonl(dst_addr), sub);  */
@@ -158,6 +146,28 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 }
 
 // ANP Milestone 3
+
+struct subuff *tcp_syn(struct tcp_stream_info* stream_data, uint32_t dst_addr, uint16_t dst_port){ 
+        struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
+        sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
+        sub->protocol = IPP_TCP; //Set TCP protocol
+
+        // Set TCP Header Values
+        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
+        tcp_hdr->srcport = htons(rand_uint16());
+        tcp_hdr->dstport = htons(dst_port);
+        tcp_hdr->seq = 1;
+        tcp_hdr->ack_seq = 0;
+        tcp_hdr->data_offset = 0;
+        tcp_hdr->syn=1;
+        tcp_hdr->win=0;
+        tcp_hdr->urp = 0;
+        tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr); // FIXME: Set to actual valid csum
+
+        debug_tcp_hdr(tcp_hdr);
+        return sub;
+}
+
 int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num){
     struct tcphdr* tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
     sub->protocol = IPP_TCP;
