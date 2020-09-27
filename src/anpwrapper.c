@@ -112,6 +112,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         printf("[?] Sending lookup request for dst_addr...");
         int return_ip_out = ip_output(htonl(dst_addr), sub);
         printf("got return code %d.\n", return_ip_out);
+        hexDump("[X] Dump of Packet sent:", sub->head, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN );
 
         // We now have the set IP Headers to fiddle with
         struct iphdr* ip_hdr = (struct iphdr *)sub->data;
