@@ -159,7 +159,7 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         sub->protocol = IPP_TCP; //Set TCP protocol
         sub_push(sub, TCP_HDR_LEN);
         // Set TCP Header Values
-        struct tcphdr *tcp_hdr = (struct tcphdr*)sub->head+ETH_HDR_LEN+IP_HDR_LEN;
+        struct tcphdr *tcp_hdr = (struct tcphdr*)sub->head+ETH_HDR_LEN+IP_HDR_LEN-10;
         tcp_hdr->srcport = htons(stream_data->stream_port);
         tcp_hdr->dstport = htons(dst_port);
         tcp_hdr->header_len = 5;
