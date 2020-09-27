@@ -104,7 +104,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct subuff* sub = tcp_base(stream_data, dst_addr, dst_port);
         struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
-        tcp_hdr->ack=htonl(43690);
+        tcp_hdr->ack_seq=htonl(43690);
         tcp_hdr->syn=1;
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
         debug_tcp_hdr(tcp_hdr);
