@@ -113,18 +113,13 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         int counter = 0;
         while(counter<3){
             printf("[#%d] Passing made packet onto ip_output...\n", counter);
-            
             sub = tcp_syn(stream_data, dst_addr, dst_port);
             return_ip_out = ip_output(htonl(dst_addr), sub);
             free_sub(sub);
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
+            
             if (return_ip_out>=0) {
-                /* while(counter<10){ */
-                    /* printf("[Repeating packet #%d] Sent.\n", counter); */
-                    /* return_ip_out = ip_output(htonl(dst_addr), sub);  */
-                    /* printf("[Repeating packet #%d] ip_output ret: %d\n", counter, return_ip_out); */
-                    /* counter+=1; */
-                /* } */
+                // Sent some bytes?
                 while(stream_data->state<2 && stream_data->state>=0) {
                     printf("[~] Waiting on state change, cur=%d, expected=>2\n", stream_data->state);
                     sub = tcp_syn(stream_data, dst_addr, dst_port);
