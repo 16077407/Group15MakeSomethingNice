@@ -79,7 +79,7 @@ int ip_output(uint32_t dst_ip_addr, struct subuff *sub)
     ihdr->proto = sub->protocol;
     ihdr->saddr = sub->dev->addr;
     ihdr->daddr = dst_ip_addr;
-    ihdr->csum = 0;
+    ihdr->csum = do_csum(ihdr, sizeof(struct iphdr), 0);
 
     debug_ip_hdr("out", ihdr);
 
