@@ -154,7 +154,7 @@ struct subuff *tcp_syn(struct tcp_stream_info* stream_data, uint32_t dst_addr, u
         tcp_hdr->dstport = htons(dst_port);
         tcp_hdr->seq = 1;
         tcp_hdr->ack_seq = 0;
-        tcp_hdr->data_offset = 0;
+        tcp_hdr->header_len = 5;
         tcp_hdr->syn=1;
         tcp_hdr->win=0;
         tcp_hdr->urp = 0;

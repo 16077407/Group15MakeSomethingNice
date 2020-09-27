@@ -34,7 +34,7 @@ struct tcphdr {
     uint16_t dstport;
     uint32_t seq;
     uint32_t ack_seq;
-    unsigned int data_offset : 4;
+    unsigned int header_len : 4;
     unsigned int reserved : 4;
     unsigned int cwr : 1;
     unsigned int ece : 1;
