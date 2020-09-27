@@ -174,7 +174,7 @@ int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp
     tcp_hdr->dstport = tcp->srcport;
     tcp_hdr->seq = seq_num;
     tcp_hdr->ack_seq = ack_num;
-    tcp_hdr->data_offset = 0;
+    tcp_hdr->header_len = 5;
     tcp_hdr->ack=1;
     tcp_hdr->win=0;
     tcp_hdr->urp = 0;
