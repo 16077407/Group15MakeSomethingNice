@@ -30,8 +30,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-void *open_streams[1<<16-1];
-void *open_streams_fd[MAX_CUSTOM_TCP_FD-MIN_CUSTOM_TCP_FD];
+struct tcp_stream_info *open_streams_port[1<<16-1];
+struct tcp_stream_info *open_streams_fd[MAX_CUSTOM_TCP_FD-MIN_CUSTOM_TCP_FD];
 int LAST_ISSUED_TCP_FD = MIN_CUSTOM_TCP_FD;
 
 static int (*__start_main)(int (*main) (int, char * *, char * *), int argc, \
@@ -63,8 +63,6 @@ static int is_socket_supported(int domain, int type, int protocol)
 // TODO: ANP milestone 3 -- implement the socket, and connect calls
 int socket(int domain, int type, int protocol) {
     if (is_socket_supported(domain, type, protocol)) {
-        //TODO: implement your logic here
-
         // Setup TCPStream struct to keep track of state and dest
         struct tcp_stream_info *stream = malloc(sizeof(struct tcp_stream_info));
         stream->state = 0; // uninitialized
@@ -75,7 +73,7 @@ int socket(int domain, int type, int protocol) {
         stream->header = malloc(sizeof(struct tcphdr));
         stream->header->srcport = 0;// set random outgoing port
 
-        open_streams[stream->header->srcport] = stream; // Store for later by port
+        open_streams_port[stream->header->srcport] = stream; // Store for later by port
 
         // Return useful FD
         LAST_ISSUED_TCP_FD += 1;
@@ -183,7 +181,7 @@ int tcp_rx(struct subuff *sub){
     printf("\n[!] RECIEVED TCP PACKET\n\n");
     struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
     struct tcphdr *tcp_header = (struct tcphdr *) ip_header->data;
-    struct tcp_stream_info *stream_data = open_streams[tcp_header->dstport];
+    struct tcp_stream_info *stream_data = open_streams_port[tcp_header->dstport];
 
     if (tcp_header->ack_seq == (stream_data->last_unacked_seq)) {
         // VALID PACKET ORDERING CHECKED
