@@ -126,7 +126,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         while(counter<3){
             printf("[#%d] Passing made packet onto ip_output...\n", counter);
 
-            return_ip_out = ip_output(htonl(dst_addr), NULL);
+            return_ip_out = ip_output(htonl(dst_addr), sub);
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
             if (return_ip_out>=0) {
                 debug_tcp_hdr(tcp_hdr);
