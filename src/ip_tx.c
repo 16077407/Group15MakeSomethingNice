@@ -67,10 +67,7 @@ int ip_output(uint32_t dst_ip_addr, struct subuff *sub)
 
     sub->dev = rt->dev;
     sub->rt = rt;
-    
-    printf("CHECK 1\n");
     sub_push(sub, IP_HDR_LEN);
-    printf("CHECK 2\n");
 
     ihdr->version = IPP_NUM_IP_in_IP;
     ihdr->ihl = 0x05;

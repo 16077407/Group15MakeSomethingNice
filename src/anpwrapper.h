@@ -32,12 +32,13 @@ struct tcp_stream_info {
     int bytes_tx;
     int bytes_rx;
     int state;
+    uint32_t initial_seq;
     uint32_t last_unacked_seq;
     uint16_t stream_port;
     void *rx_in;
 };
 
-struct subuff *tcp_syn(struct tcp_stream_info* stream_data, uint32_t dst_addr, uint16_t dst_port);
+struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, uint16_t dst_port);
 
 int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num);
 
