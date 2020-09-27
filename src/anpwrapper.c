@@ -107,11 +107,13 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->ack=0;
         tcp_hdr->syn=1;
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
+
+        debug_tcp_hdr(tcp_hdr);
         printf("[?] Sending lookup request for dst_addr...");
         int return_ip_out = ip_output(htonl(dst_addr), sub);
         printf("got return code %d.\n", return_ip_out);
 
-        // We now have the set IP Headers, to fiddle with
+        // We now have the set IP Headers to fiddle with
         struct iphdr* ip_hdr = (struct iphdr *)sub->data;
         sub->data+=IP_HDR_LEN; // Reset Data to pre ip_output push
         sub->len-=IP_HDR_LEN; // Reset Len to pre ip_output push 
@@ -121,7 +123,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         while(counter<3){
             printf("\n[#%d] Passing made packet onto ip_output...\n", counter);
             return_ip_out = ip_output(htonl(dst_addr), sub);
-            printf("[=%d] Result of ip_output: %d\n\n",counter, return_ip_out);
+            printf("[=%d] Result of ip_output: %d\n\n", counter, return_ip_out);
             
             if (return_ip_out>=0) {
                 // Sent some bytes?
@@ -161,7 +163,6 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         tcp_hdr->win=htons(4096);
         tcp_hdr->urp=0;
 
-        debug_tcp_hdr(tcp_hdr);
         return sub;
 }
 
