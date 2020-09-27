@@ -154,7 +154,6 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub->protocol = IPP_TCP; //Set TCP protocol
-        sub->dlen = 0;
 
         // Set TCP Header Values
         struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
