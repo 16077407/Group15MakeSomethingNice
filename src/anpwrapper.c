@@ -107,8 +107,8 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->ack=0;
         tcp_hdr->syn=1;
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
-
         debug_tcp_hdr(tcp_hdr);
+
         printf("[?] Sending lookup request for dst_addr...");
         int return_ip_out = ip_output(htonl(dst_addr), sub);
         printf("got return code %d.\n", return_ip_out);
@@ -122,9 +122,10 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         int counter = 0;
         while(counter<3){
             printf("\n[#%d] Passing made packet onto ip_output...\n", counter);
+            debug_tcp_hdr(tcp_hdr);
             return_ip_out = ip_output(htonl(dst_addr), sub);
             printf("[=%d] Result of ip_output: %d\n\n", counter, return_ip_out);
-            
+
             if (return_ip_out>=0) {
                 // Sent some bytes?
                 while(stream_data->state<2 && stream_data->state>=0) {
