@@ -137,6 +137,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
                     /* counter+=1; */
                 /* } */
                 while(stream_data->state<2 && stream_data->state>0) {
+                    printf("[~] Waiting on state change, cur=%d, expected=>2\n", stream_data->state);
                     sleep(2);
                 }
                 return 0;
