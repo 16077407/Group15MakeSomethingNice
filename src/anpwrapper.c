@@ -78,7 +78,7 @@ int socket(int domain, int type, int protocol) {
         // Return useful FD
         LAST_ISSUED_TCP_FD += 1;
         stream->fd = LAST_ISSUED_TCP_FD;
-        open_streams_fd[stream->fd] = stream;
+        open_streams_fd[stream->fd-MIN_CUSTOM_TCP_FD] = stream;
 
         if (LAST_ISSUED_TCP_FD>MAX_CUSTOM_TCP_FD) {
             free(stream);
