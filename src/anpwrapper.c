@@ -136,7 +136,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
                     /* printf("[Repeating packet #%d] ip_output ret: %d\n", counter, return_ip_out); */
                     /* counter+=1; */
                 /* } */
-                while(stream_data->state<2) {
+                while(stream_data->state<2 && stream_data->state>0) {
                     sleep(2);
                 }
                 return 0;
@@ -156,7 +156,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 
 // ANP Milestone 3
 int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num){
-    tcp_header = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
+    struct tcphdr* tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
     sub->protocol = IPP_TCP;
     uint16_t x = rand_uint16();
     // Get dts_Addr and dst_port
@@ -171,8 +171,8 @@ int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp
     tcp_hdr->urp = 0;
     tcp_hdr->csum = do_tcp_csum((void *)tcp, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), ip->saddr);
 
-    return_ip_out = ip_output(ip->saddr, sub);
-    rintf("Result of ip_output ack: %d\n",return_ip_out);
+    int return_ip_out = ip_output(ip->saddr, sub);
+    printf("Result of ip_output ack: %d\n",return_ip_out);
 }
 
 int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, void *data, ssize_t data_length){
