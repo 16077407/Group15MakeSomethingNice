@@ -69,7 +69,7 @@ int socket(int domain, int type, int protocol) {
         stream->bytes_tx = 0;
         stream->bytes_rx = 0;
         stream->last_unacked_seq = 0;
-        stream->stream_port = rand_uint16();
+        stream->stream_port = 48059;//rand_uint16();
 
         open_streams_port[stream->stream_port] = stream; // Store for later by port
 
@@ -104,15 +104,15 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct subuff* sub = tcp_base(stream_data, dst_addr, dst_port);
         struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
-        tcp_hdr->ack=0;
+        tcp_hdr->ack=htonl(43690);
         tcp_hdr->syn=1;
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
         debug_tcp_hdr(tcp_hdr);
 
-        printf("[?] Sending lookup request for dst_addr...");
+        printf("[?] Sending lookup request for dst_addr...\n");
         int return_ip_out = ip_output(htonl(dst_addr), sub);
-        printf("got return code %d.\n", return_ip_out);
         hexDump("[X] Dump of Packet sent", sub->head+ETH_HDR_LEN, IP_HDR_LEN + TCP_HDR_LEN );
+        if (return_ip_out!=-11 && return_ip_out<0) return -1;
 
         // We now have the set IP Headers to fiddle with
         struct iphdr* ip_hdr = (struct iphdr *)sub->data;
