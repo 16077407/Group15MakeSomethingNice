@@ -20,8 +20,8 @@
     do {                                                                \
         printf("TCP: " \
                "dst_port: %d, src_port: %d, seq %u, ack %u, win %u, Flags [A%uP%uR%uS%uF%u], csum=%hx\n", \
-               hdr->dstport, hdr->srcport, hdr->seq, hdr->ack, \
-               hdr->win, hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin, hdr->csum); \
+               ntohs(hdr->dstport), ntohs(hdr->srcport), ntohl(hdr->seq), ntohl(hdr->ack), \
+               hdr->win, hdr->ack, hdr->psh, hdr->rst, hdr->syn, hdr->fin, ntohs(hdr->csum)); \
     } while (0)
 
 
