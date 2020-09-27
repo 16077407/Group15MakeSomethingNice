@@ -127,9 +127,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
                 // Sent some bytes?
                 while(stream_data->state<2 && stream_data->state>=0) {
                     printf("[~] Waiting on state change, cur=%d, expected=>2\n", stream_data->state);
-                    sub = tcp_base(stream_data, dst_addr, dst_port);
-                    ip_output(htonl(dst_addr), sub);
-                    free_sub(sub);
                     sleep(2);
                 }
                 printf("[~] Done waiting, reached state %d\n",stream_data->state);
