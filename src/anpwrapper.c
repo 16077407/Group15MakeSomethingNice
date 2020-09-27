@@ -147,18 +147,19 @@ struct subuff *tcp_syn(struct tcp_stream_info* stream_data, uint32_t dst_addr, u
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub->protocol = IPP_TCP; //Set TCP protocol
+        sub->dlen = 0;
 
         // Set TCP Header Values
         struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
-        tcp_hdr->srcport = stream_data->stream_port;
+        tcp_hdr->srcport = htons(stream_data->stream_port);
         tcp_hdr->dstport = htons(dst_port);
-        tcp_hdr->seq = 1;
-        tcp_hdr->ack_seq = 0;
+        tcp_hdr->seq = htonl(1);
+        tcp_hdr->ack_seq = htonl(0);
         tcp_hdr->header_len = 5;
         tcp_hdr->syn=1;
-        tcp_hdr->win=0;
-        tcp_hdr->urp = 0;
-        tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr); // FIXME: Set to actual valid csum
+        tcp_hdr->win=4096;
+        tcp_hdr->urp=0;
+        tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr);
 
         debug_tcp_hdr(tcp_hdr);
         return sub;
@@ -167,10 +168,8 @@ struct subuff *tcp_syn(struct tcp_stream_info* stream_data, uint32_t dst_addr, u
 int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num){
     struct tcphdr* tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
     sub->protocol = IPP_TCP;
-    uint16_t x = rand_uint16();
-    // Get dts_Addr and dst_port
 
-    tcp_hdr->srcport = htons(x); // FIXME: Set to random 16bit wide (u)integer
+    tcp_hdr->srcport = htons(rand_uint16()); // FIXME: Set to random 16bit wide (u)integer
     tcp_hdr->dstport = tcp->srcport;
     tcp_hdr->seq = seq_num;
     tcp_hdr->ack_seq = ack_num;
