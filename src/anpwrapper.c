@@ -161,7 +161,7 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         // Set TCP Header Values
         printf("\n[DBG] ETH_HDR_LEN = %ld\n\tIP_HDR_LEN = %ld\n\tSUM = %ld\n\tTCP_HDR_LEN = %ld\n\tTOTAL = %ld\n\n", ETH_HDR_LEN, IP_HDR_LEN, ETH_HDR_LEN+IP_HDR_LEN, TCP_HDR_LEN, TCP_HDR_LEN+ETH_HDR_LEN+IP_HDR_LEN);
         //
-        struct tcphdr *tcp_hdr = (struct tcphdr*)sub->head+ETH_HDR_LEN+IP_HDR_LEN+6;
+        struct tcphdr *tcp_hdr = (struct tcphdr*)sub->head+ETH_HDR_LEN+IP_HDR_LEN;
         tcp_hdr->srcport = htons(stream_data->stream_port);
         tcp_hdr->dstport = htons(dst_port);
         tcp_hdr->header_len = 5;
