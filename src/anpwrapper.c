@@ -70,7 +70,7 @@ int socket(int domain, int type, int protocol) {
         stream->bytes_rx = 0;
         stream->last_unacked_seq = 0;
         stream->initial_seq = 3149642683;
-        stream->stream_port = rand_uint16();
+        stream->stream_port = 56797;//rand_uint16();
 
         open_streams_port[stream->stream_port] = stream; // Store for later by port
 
