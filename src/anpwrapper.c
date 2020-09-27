@@ -108,14 +108,15 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct subuff* sub = tcp_syn(stream_data, dst_addr, dst_port);
         int return_ip_out = ip_output(htonl(dst_addr), sub);
         printf("got return code %d.\n", return_ip_out);
-        sub_reset_header(sub);
-
+        free_sub(sub);
 
         int counter = 0;
         while(counter<3){
             printf("[#%d] Passing made packet onto ip_output...\n", counter);
-
+            
+            sub = tcp_syn(stream_data, dst_addr, dst_port);
             return_ip_out = ip_output(htonl(dst_addr), sub);
+            free_sub(sub);
             printf("[=%d] Result of ip_output: %d\n",counter, return_ip_out);
             if (return_ip_out>=0) {
                 /* while(counter<10){ */
@@ -126,7 +127,9 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
                 /* } */
                 while(stream_data->state<2 && stream_data->state>=0) {
                     printf("[~] Waiting on state change, cur=%d, expected=>2\n", stream_data->state);
+                    sub = tcp_syn(stream_data, dst_addr, dst_port);
                     ip_output(htonl(dst_addr), sub);
+                    free_sub(sub);
                     sleep(2);
                 }
                 printf("[~] Done waiting, reached state %d\n",stream_data->state);
