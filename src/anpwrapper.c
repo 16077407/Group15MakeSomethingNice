@@ -26,9 +26,9 @@
 #include "init.h"
 #include "tcp.h"
 #include "utilities.h"
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <time.h> 
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 void *open_streams[1<<16-1];
 void *open_streams_fd[MAX_CUSTOM_TCP_FD-MIN_CUSTOM_TCP_FD];
@@ -98,14 +98,14 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
-        struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD]; 
+        struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
-        sub->protocol = 6; //Set TCP protocol
+        sub->protocol = IPP_TCP; //Set TCP protocol
 
         // Set/get the destination addr
-        uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr; 
+        uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
         printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
 
         // Set TCP Header Values
@@ -153,7 +153,23 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 
 // ANP Milestone 3
 int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num){
-        return 0;
+    tcp_header = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
+    sub->protocol = IPP_TCP;
+    uint16_t x = rand_uint16();
+    // Get dts_Addr and dst_port
+
+    tcp_hdr->srcport = htons(x); // FIXME: Set to random 16bit wide (u)integer
+    tcp_hdr->dstport = tcp->srcport;
+    tcp_hdr->seq = seq_num;
+    tcp_hdr->ack_seq = ack_num;
+    tcp_hdr->data_offset = 0;
+    tcp_hdr->ack=1;
+    tcp_hdr->win=0;
+    tcp_hdr->urp = 0;
+    tcp_hdr->csum = do_tcp_csum((void *)tcp, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), ip->saddr);
+
+    return_ip_out = ip_output(ip->saddr, sub);
+    rintf("Result of ip_output ack: %d\n",return_ip_out);
 }
 
 int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, void *data, ssize_t data_length){
@@ -172,7 +188,7 @@ int tcp_rx(struct subuff *sub){
             case 1: // EXPECTING SYN-ACK
                 if (tcp_header->ack && tcp_header->syn) {
                     stream_data->state+=1;
-                    tcp_ack(stream_data, ip_header, tcp_header, sub, tcp_header->seq+1, tcp_header->seq);
+                    // tcp_ack(stream_data, ip_header, tcp_header, sub, tcp_header->seq+1, tcp_header->seq);
                     stream_data->last_unacked_seq=tcp_header->seq+1;
                     printf("[=] Recieved SYN-ACK, replyed with ACK and setting stream as ESTABLISHED\n");
                     break;
@@ -182,7 +198,7 @@ int tcp_rx(struct subuff *sub){
             default: // ESTABLISHED connection, appending data to stream buffer
                 goto drop_pkt;
         }
-    } else { 
+    } else {
         printf("%s\n", "TCP SYN ACK was not correct");
     }
 drop_pkt:
@@ -239,8 +255,7 @@ uint16_t  rand_uint16(){
     uint16_t r = 0;
     for(int i = 0; i<16; i++){
     r = r*2 + rand()%2;
-    } 
-    printf("[#] Random number 16 bits unsigned int: %d\n", r );	
+    }
+    printf("[#] Random number 16 bits unsigned int: %d\n", r );
     return r;
-} 
-
+}

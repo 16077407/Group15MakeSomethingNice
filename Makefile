@@ -67,10 +67,10 @@ RM = /snap/cmake/599/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /bin/Group15MakeSomethingNice
+CMAKE_SOURCE_DIR = /home/ruth/Documents/anp/Group15MakeSomethingNice
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /bin/Group15MakeSomethingNice
+CMAKE_BINARY_DIR = /home/ruth/Documents/anp/Group15MakeSomethingNice
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -145,9 +145,9 @@ install/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /bin/Group15MakeSomethingNice/CMakeFiles /bin/Group15MakeSomethingNice//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ruth/Documents/anp/Group15MakeSomethingNice/CMakeFiles /home/ruth/Documents/anp/Group15MakeSomethingNice//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /bin/Group15MakeSomethingNice/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ruth/Documents/anp/Group15MakeSomethingNice/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
