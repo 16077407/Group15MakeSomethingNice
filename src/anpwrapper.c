@@ -96,9 +96,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
-        printf("Check 1 (fd_val = %d)\n", sockfd-MIN_CUSTOM_TCP_FD);
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
-        printf("check 2\n");
 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
@@ -107,11 +105,14 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         // Set/get the destination addr
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
         printf("[!] I believe the dest addr is: %s\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr));
+        printf("[?] Sending lookup request for dst_addr...");
+        int return_ip_out = ip_output(htonl(dst_addr), sub);
+        printf("got return code %d.\n", return_ip_out);
+        sub_reset_header(sub);
 
         // Set TCP Header Values
         struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
-        uint16_t x = rand_uint16();
-        tcp_hdr->srcport = htons(x); // FIXME: Set to random 16bit wide (u)integer
+        tcp_hdr->srcport = htons(rand_uint16());
         tcp_hdr->dstport = htons(((struct sockaddr_in *)addr)->sin_port);
         tcp_hdr->seq = 1;
         tcp_hdr->ack_seq = 0;
@@ -122,7 +123,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr); // FIXME: Set to actual valid csum
 
         int counter = 0;
-        int return_ip_out;
         while(counter<3){
             printf("[#%d] Passing made packet onto ip_output...\n", counter);
 
