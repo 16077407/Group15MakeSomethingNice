@@ -140,6 +140,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
                     printf("[~] Waiting on state change, cur=%d, expected=>2\n", stream_data->state);
                     sleep(2);
                 }
+                printf("[~] Done waiting, reached state %d\n",stream_data->state);
                 return 0;
             }
             if (return_ip_out==-1 && counter>0){
@@ -189,7 +190,7 @@ int tcp_rx(struct subuff *sub){
     if (tcp_header->ack_seq == (stream_data->last_unacked_seq)) {
         // VALID PACKET ORDERING CHECKED
         switch (stream_data->state) {
-            case 1: // EXPECTING SYN-ACK
+            case 0: // EXPECTING SYN-ACK
                 if (tcp_header->ack && tcp_header->syn) {
                     stream_data->state+=1;
                     // tcp_ack(stream_data, ip_header, tcp_header, sub, tcp_header->seq+1, tcp_header->seq);
