@@ -130,33 +130,31 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         /* sub->data+=IP_HDR_LEN; // Reset Data to pre ip_output push */
         /* sub->len-=IP_HDR_LEN; // Reset Len to pre ip_output push  */
         // We can make changes to the ip header but it'll be reset at push
+        return_ip_out = ip_output(htonl(dst_addr), sub);
+        printf("[$] Result of ip_output: %d\n\n", return_ip_out); 
+        hexDump("[X] Dump of Packet sent", sub->head, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN );
 
-        int counter = 0;
-        while(counter<3){
-            printf("\n[#%d] Passing made packet onto ip_output...\n", counter);
-            debug_tcp_hdr(tcp_hdr);
-            return_ip_out = ip_output(htonl(dst_addr), sub);
-            printf("[=%d] Result of ip_output: %d\n\n", counter, return_ip_out); 
-            hexDump("[X] Dump of Packet sent", sub->head+ETH_HDR_LEN, IP_HDR_LEN + TCP_HDR_LEN );
-
-            if (return_ip_out>=0) {
-                // Sent some bytes?
-                while(stream_data->state<2 && stream_data->state>=0) {
-                    printf("[~] Waiting on state change, cur=%d, expected=>2\n", stream_data->state);
-                    sleep(2);
-                }
-                printf("[~] Done waiting, reached state %d\n",stream_data->state);
-                free_sub(sub);
-                return 0;
+        if (return_ip_out>=0) {
+            // Sent some bytes?
+            while(stream_data->state<2 && stream_data->state>=0) {
+                printf("[~] Waiting on state change, cur=%d, expected=>2\n", stream_data->state);
+                sleep(2);
             }
-            if (return_ip_out==-1 && counter>0){
-                printf("[!] No route to host?\n");
-                return -1;
-            }
-
-            counter+=1;
-            sleep(1);
+            printf("[~] Done waiting, reached state %d\n",stream_data->state);
+            free_sub(sub);
+            return 0;
         }
+        if (return_ip_out==-1){
+            printf("[!] No route to host?\n");
+            return -1;
+        }
+
+        /* int counter = 0; */
+        /* while(counter<3){ */
+/*  */
+            /* counter+=1; */
+            /* sleep(1); */
+        /* } */
     }
     // the default path
     return _connect(sockfd, addr, addrlen);
