@@ -126,7 +126,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->header_len=6;
         tcp_hdr->option_type = 2;
         tcp_hdr->option_length = 4;
-        tcp_hdr->option_value = htons(534);
+        tcp_hdr->option_value = htons(0x534);
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
         debug_tcp_hdr(tcp_hdr);
 
@@ -177,7 +177,7 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         tcp_hdr->srcport = htons(stream_data->stream_port);
         tcp_hdr->dstport = htons(dst_port);
         tcp_hdr->header_len = 5;
-        tcp_hdr->win=htons(64240);
+        tcp_hdr->win=htons(8760);
         tcp_hdr->urp=0;
 
         return sub;
