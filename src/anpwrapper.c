@@ -200,10 +200,11 @@ int tcp_rx(struct subuff *sub){
     struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
     struct tcphdr *tcp_header = (struct tcphdr *)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
     struct tcp_stream_info *stream_data = open_streams_port[tcp_header->dstport];
+    printf("[D] Check 1\n");
     
-    if (tcp_header->ack_seq == (stream_data->last_unacked_seq)) {
+    if (tcp_header->ack_seq == stream_data->last_unacked_seq) {
         // VALID PACKET ORDERING CHECKED
-        printf("[D] Check 1\n");
+        printf("[D] Check 2\n");
         switch (stream_data->state) {
             case 0: // EXPECTING SYN-ACK
                 if (tcp_header->ack && tcp_header->syn) {
