@@ -121,6 +121,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         sub = tcp_base(stream_data, dst_addr, dst_port);
         struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
+        stream_data->last_unacked_seq = stream_data->initial_seq;
         tcp_hdr->ack_seq=0;//htonl(2863311530);
         tcp_hdr->syn=1;
         tcp_hdr->header_len=6;
@@ -202,7 +203,7 @@ int tcp_rx(struct subuff *sub){
     struct tcp_stream_info *stream_data = open_streams_port[ntohs(tcp_header->dstport)];
     printf("[D] Check 1 %d\n", stream_data->stream_port);
     
-    if (tcp_header->ack_seq == stream_data->last_unacked_seq) {
+    if (ntohl(tcp_header->ack_seq) == stream_data->last_unacked_seq) {
         // VALID PACKET ORDERING CHECKED
         printf("[D] Check 2\n");
         switch (stream_data->state) {
