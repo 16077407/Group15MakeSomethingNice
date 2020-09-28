@@ -106,18 +106,18 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         printf("[!] I believe the dest addr is: %s:%d\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr), dst_port);
 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN+IP_HDR_LEN);
-        printf("[?] Sending lookup request for dst_addr...\n");
-        int return_ip_out = ip_output(htonl(dst_addr), sub);
-        hexDump("[X] Dump of constructed subuff", sub->head, ETH_HDR_LEN+IP_HDR_LEN);
-
-        if (return_ip_out!=-11 && return_ip_out<0) return -1;
-        while(ip_output(htonl(dst_addr), sub)==-11){
+        int return_ip_out;
+        do {
+            printf("[?] Sending lookup request for dst_addr...\n");
+            return_ip_out = ip_output(htonl(dst_addr), sub); 
             printf("[=] Waiting on resolve\n");
             sleep(1);
-        }
+        } while (return_ip_out==-11);
+        if (return_ip_out==-1) 
+        free_sub(sub);
 
         printf("[+] Constructing TCP_SYN...\n");
-        free_sub(sub);
+
         sub = tcp_base(stream_data, dst_addr, dst_port);
         struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
@@ -129,7 +129,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->option_value = htons(0x534);
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
         debug_tcp_hdr(tcp_hdr);
-
         // We now have the set IP Headers to fiddle with
         /* struct iphdr* ip_hdr = (struct iphdr *)sub->data; */
         /* sub->data+=IP_HDR_LEN; // Reset Data to pre ip_output push */
