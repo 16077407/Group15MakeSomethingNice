@@ -98,12 +98,9 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
         int optlen = 0;
 
-        printf("\n[DBG] ETH_HDR_LEN = %ld\n\tIP_HDR_LEN = %ld\n\tSUM = %ld\n\tTCP_HDR_LEN = %ld\n\tTOTAL = %ld\n\n", ETH_HDR_LEN, IP_HDR_LEN, ETH_HDR_LEN+IP_HDR_LEN, TCP_HDR_LEN, TCP_HDR_LEN+ETH_HDR_LEN+IP_HDR_LEN);
-
         // Set/get the destination addr
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
         uint16_t dst_port = ntohs(((struct sockaddr_in *)addr)->sin_port);
-        printf("[!] I believe the dest addr is: %s:%d\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr), dst_port);
 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN+IP_HDR_LEN);
         int return_ip_out;
