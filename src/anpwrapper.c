@@ -129,15 +129,10 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->option_value = htons(0x534);
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
         debug_tcp_hdr(tcp_hdr);
-        // We now have the set IP Headers to fiddle with
-        /* struct iphdr* ip_hdr = (struct iphdr *)sub->data; */
-        /* sub->data+=IP_HDR_LEN; // Reset Data to pre ip_output push */
-        /* sub->len-=IP_HDR_LEN; // Reset Len to pre ip_output push  */
-        // We can make changes to the ip header but it'll be reset at push
+        
         return_ip_out = ip_output(htonl(dst_addr), sub);
         printf("[$] Result of ip_output: %d\n\n", return_ip_out); 
-        hexDump("[X] Dump of Packet sent", sub->head, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN );
-
+        hexDump("[X] Dump of Packet sent", sub->head, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN ); 
         if (return_ip_out>=0) {
             // Sent some bytes?
             while(stream_data->state<2 && stream_data->state>=0) {
@@ -147,18 +142,13 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
             printf("[~] Done waiting, reached state %d\n",stream_data->state);
             free_sub(sub);
             return 0;
-        }
-        if (return_ip_out==-1){
+        } else if (return_ip_out==-1){
             printf("[!] No route to host?\n");
             return -1;
-        }
-
-        /* int counter = 0; */
-        /* while(counter<3){ */
-/*  */
-            /* counter+=1; */
-            /* sleep(1); */
-        /* } */
+        } else {
+            printf("[!] Unknown err: %d\n", return_ip_out);
+            return return_ip_out;
+        } 
     }
     // the default path
     return _connect(sockfd, addr, addrlen);
