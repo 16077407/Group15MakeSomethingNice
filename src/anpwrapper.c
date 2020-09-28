@@ -172,21 +172,6 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
 }
 
 int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num){
-    struct tcphdr* tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
-    sub->protocol = IPP_TCP;
-
-    tcp_hdr->srcport = (stream->stream_port); // FIXME: Set to random 16bit wide (u)integer
-    tcp_hdr->dstport = (1);
-    tcp_hdr->seq = seq_num;
-    tcp_hdr->ack_seq = ack_num;
-    tcp_hdr->header_len = 5;
-    tcp_hdr->ack=1;
-    tcp_hdr->win=0;
-    tcp_hdr->urp = 0;
-    tcp_hdr->csum = do_tcp_csum((void *)tcp, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), ip->saddr);
-
-    int return_ip_out = ip_output(ip->saddr, sub);
-    printf("Result of ip_output ack: %d\n",return_ip_out);
 }
 
 int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, void *data, ssize_t data_length){
@@ -204,11 +189,23 @@ int tcp_rx(struct subuff *sub){
         // VALID PACKET ORDERING CHECKED
         switch (stream_data->state) {
             case 0: // EXPECTING SYN-ACK
-                if (tcp_header->ack && tcp_header->syn) {
-                    stream_data->state+=1;
-                    // tcp_ack(stream_data, ip_header, tcp_header, sub, tcp_header->seq+1, tcp_header->seq);
+                if (tcp_header->ack && tcp_header->syn) { 
                     stream_data->last_unacked_seq=tcp_header->seq+1;
-                    printf("[=] Recieved SYN-ACK, replyed with ACK and setting stream as ESTABLISHED\n");
+                    // tcp_ack(stream_data, ip_header, tcp_header, sub, tcp_header->seq+1, tcp_header->seq)
+                    struct subuff* synack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
+                    struct tcphdr *reply_hdr = (struct tcphdr *)synack->head+ETH_HDR_LEN+IP_HDR_LEN;
+                    memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
+                    uint16_t storage = reply_hdr->dstport;
+                    reply_hdr->dstport = reply_hdr->srcport;
+                    reply_hdr->srcport = storage;
+                    reply_hdr->syn=0;
+                    reply_hdr->ack_seq = tcp_header->seq;
+                    reply_hdr->seq = htonl(ntohl(tcp_header->seq)+1); // Increment Seq
+                    reply_hdr->csum = htons(do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), ip_header->saddr));
+                    reply_hdr->csum = htons(reply_hdr->csum);
+
+                    hexDump("[=] Recieved SYN-ACK, replyed with ACK", reply_hdr, sizeof(tcp_header));
+                    stream_data->state+=1;
                     break;
                 } else {
                     printf("[!] Dropping packet, not SYN-ACK\n");
