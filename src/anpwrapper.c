@@ -136,7 +136,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         if (return_ip_out>=0) {
             // Sent some bytes?
             while(stream_data->state<1 && stream_data->state>=0) {
-                printf("[~] Waiting on state change, cur=%d, expected=>2\n", stream_data->state);
+                printf("[~] Waiting on state change, cur=%d, expected=>1\n", stream_data->state);
                 sleep(2);
             }
             printf("[~] Done waiting, reached state %d\n",stream_data->state);
@@ -199,7 +199,7 @@ int tcp_rx(struct subuff *sub){
                     uint16_t storage = reply_hdr->dstport;
                     reply_hdr->dstport = reply_hdr->srcport;
                     reply_hdr->srcport = storage;
-                    reply_hdr->header_len = 6;
+                    reply_hdr->header_len = 5;
                     reply_hdr->syn=0;
                     reply_hdr->ack=1;
                     reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+1);
@@ -209,6 +209,7 @@ int tcp_rx(struct subuff *sub){
                     reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
 
                     hexDump("[=] Recieved SYN-ACK, replyed with ACK", reply_hdr, TCP_HDR_LEN);
+                    synack->len-=8;
                     ip_output(ip_header->saddr, synack);
                     stream_data->state+=1;
                     break;
