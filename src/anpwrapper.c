@@ -123,10 +123,10 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         tcp_hdr->ack_seq=0;//htonl(2863311530);
         tcp_hdr->syn=1;
-        tcp_hdr->header_len=8;
+        tcp_hdr->header_len=9;
         tcp_hdr->option_type = 2;
         tcp_hdr->option_length = 4;
-        tcp_hdr->option_value = 534;
+        tcp_hdr->option_value = htons(534);
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
         debug_tcp_hdr(tcp_hdr);
 
