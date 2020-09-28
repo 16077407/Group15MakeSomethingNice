@@ -199,11 +199,12 @@ int tcp_rx(struct subuff *sub){
                     uint16_t storage = reply_hdr->dstport;
                     reply_hdr->dstport = reply_hdr->srcport;
                     reply_hdr->srcport = storage;
+                    reply_hdr->header_len = 5;
                     reply_hdr->syn=0;
                     reply_hdr->ack=1;
                     reply_hdr->ack_seq = tcp_header->seq;
                     reply_hdr->seq = htonl(ntohl(tcp_header->seq)+1); // Increment Seq
-                    reply_hdr->csum = htons(do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, ntohl(ip_header->saddr), ntohl(ip_header->daddr)));
+                    reply_hdr->csum = htons(do_tcp_csum((void *)reply_hdr, reply_hdr->header_len*8, IPP_TCP, ntohl(ip_header->saddr), ntohl(ip_header->daddr)));
                     reply_hdr->csum = htons(reply_hdr->csum);
 
                     hexDump("[=] Recieved SYN-ACK, replyed with ACK", reply_hdr, TCP_HDR_LEN);
