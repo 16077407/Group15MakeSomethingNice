@@ -193,7 +193,7 @@ int tcp_rx(struct subuff *sub){
                     stream_data->last_unacked_seq=tcp_header->seq+1;
                     // tcp_ack(stream_data, ip_header, tcp_header, sub, tcp_header->seq+1, tcp_header->seq)
                     struct subuff* synack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
-                    struct tcphdr *reply_hdr = (struct tcphdr *)synack->head+ETH_HDR_LEN+IP_HDR_LEN;
+                    struct tcphdr *reply_hdr = (struct tcphdr *)synack->data;
                     memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
                     uint16_t storage = reply_hdr->dstport;
                     reply_hdr->dstport = reply_hdr->srcport;
