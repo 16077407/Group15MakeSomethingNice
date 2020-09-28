@@ -211,6 +211,7 @@ int tcp_rx(struct subuff *sub){
                     printf("[=] Recieved SYN-ACK, replyed with ACK and setting stream as ESTABLISHED\n");
                     break;
                 } else {
+                    printf("[!] Dropping packet, not SYN-ACK\n");
                     goto drop_pkt;
                 }
             default: // ESTABLISHED connection, appending data to stream buffer
