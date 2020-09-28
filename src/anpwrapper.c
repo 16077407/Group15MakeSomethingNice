@@ -101,7 +101,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 
         // Set/get the destination addr
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
-        uint16_t dst_port = ((struct sockaddr_in *)addr)->sin_port;
+        uint16_t dst_port = ntohs(((struct sockaddr_in *)addr)->sin_port);
         printf("[!] I believe the dest addr is: %s:%d\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr), dst_port);
 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN+IP_HDR_LEN);
