@@ -198,11 +198,12 @@ int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp,
 int tcp_rx(struct subuff *sub){
     printf("\n[!] RECIEVED TCP PACKET\n\n");
     struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
-    struct tcphdr *tcp_header = (struct tcphdr *) ip_header->data;
+    struct tcphdr *tcp_header = (struct tcphdr *)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
     struct tcp_stream_info *stream_data = open_streams_port[tcp_header->dstport];
-
+    printf("[D] Check 1\n");
     if (tcp_header->ack_seq == (stream_data->last_unacked_seq)) {
         // VALID PACKET ORDERING CHECKED
+
         switch (stream_data->state) {
             case 0: // EXPECTING SYN-ACK
                 if (tcp_header->ack && tcp_header->syn) {
