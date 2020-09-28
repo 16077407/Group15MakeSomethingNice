@@ -104,7 +104,16 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         uint16_t dst_port = ((struct sockaddr_in *)addr)->sin_port;
         printf("[!] I believe the dest addr is: %s:%d\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr), dst_port);
 
-        struct subuff* sub = tcp_base(stream_data, dst_addr, dst_port);
+        struct subuff *sub = alloc_sub(ETH_HDR_LEN+IP_HDR_LEN);
+        printf("[?] Sending lookup request for dst_addr...\n");
+        int return_ip_out = ip_output(htonl(dst_addr), sub);
+        hexDump("[X] Dump of constructed subuff", sub->head, ETH_HDR_LEN+IP_HDR_LEN);
+
+        if (return_ip_out!=-11 && return_ip_out<0) return -1;
+
+        printf("[+] Constructing TCP_SYN...\n");
+        free_sub(sub);
+        sub = tcp_base(stream_data, dst_addr, dst_port);
         struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         tcp_hdr->ack_seq=htonl(2863311530);
@@ -112,15 +121,10 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
         debug_tcp_hdr(tcp_hdr);
 
-        printf("[?] Sending lookup request for dst_addr...\n");
-        int return_ip_out = ip_output(htonl(dst_addr), sub);
-        hexDump("[X] Dump of Packet sent", sub->head+ETH_HDR_LEN, IP_HDR_LEN + TCP_HDR_LEN );
-        if (return_ip_out!=-11 && return_ip_out<0) return -1;
-
         // We now have the set IP Headers to fiddle with
-        struct iphdr* ip_hdr = (struct iphdr *)sub->data;
-        sub->data+=IP_HDR_LEN; // Reset Data to pre ip_output push
-        sub->len-=IP_HDR_LEN; // Reset Len to pre ip_output push 
+        /* struct iphdr* ip_hdr = (struct iphdr *)sub->data; */
+        /* sub->data+=IP_HDR_LEN; // Reset Data to pre ip_output push */
+        /* sub->len-=IP_HDR_LEN; // Reset Len to pre ip_output push  */
         // We can make changes to the ip header but it'll be reset at push
 
         int counter = 0;
