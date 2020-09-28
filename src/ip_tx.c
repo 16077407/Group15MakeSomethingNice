@@ -44,8 +44,9 @@ int dst_neigh_output(struct subuff *sub)
         dst_addr = rt->gateway;
     }
     target_dst_mac = arp_get_hwaddr(dst_addr);
-
+    
     if (target_dst_mac) {
+        printf("\n\n[!!] PASSING PACKET TO NETDEV.\n\n");
         return netdev_transmit(sub, target_dst_mac, ETH_P_IP);
     } else {
         arp_request(src_addr, dst_addr, anp_netdev);
@@ -61,7 +62,6 @@ int ip_output(uint32_t dst_ip_addr, struct subuff *sub)
     rt = route_lookup(dst_ip_addr);
 
     if (!rt) {
-        printf("IP output route lookup failed \n");
         return -1;
     }
 
@@ -79,8 +79,7 @@ int ip_output(uint32_t dst_ip_addr, struct subuff *sub)
     ihdr->proto = sub->protocol;
     ihdr->saddr = sub->dev->addr;
     ihdr->daddr = dst_ip_addr;
-    ihdr->csum = do_csum(ihdr, sizeof(struct iphdr), 0);
-
+    ihdr->csum = 0;
     debug_ip_hdr("out", ihdr);
 
     ihdr->len = htons(ihdr->len);
