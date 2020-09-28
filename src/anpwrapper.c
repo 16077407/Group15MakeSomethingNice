@@ -123,8 +123,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->ack_seq=htonl(2863311530);
         tcp_hdr->syn=1;
         tcp_hdr->header_len=6;
-        unsigned short flipped_section = tcp_hdr->header_len;
-        tcp_hdr->header_len = htons(flipped_section);
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
         debug_tcp_hdr(tcp_hdr);
 
