@@ -70,7 +70,7 @@ int socket(int domain, int type, int protocol) {
         stream->bytes_rx = 0;
         stream->last_unacked_seq = 0;
         stream->initial_seq = 3149642683;
-        stream->stream_port = 56797;//rand_uint16();
+        stream->stream_port = rand_uint16();
 
         open_streams_port[stream->stream_port] = stream; // Store for later by port
 
@@ -170,8 +170,8 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         //
         struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN); //sub->head+ETH_HDR_LEN+IP_HDR_LEN;
 
-        tcp_hdr->srcport = htons(stream_data->stream_port);
-        tcp_hdr->dstport = htons(dst_port);
+        tcp_hdr->srcport = stream_data->stream_port;
+        tcp_hdr->dstport = dst_port;
         tcp_hdr->header_len = 5;
         tcp_hdr->win=htons(4096);
         tcp_hdr->urp=0;
@@ -183,8 +183,8 @@ int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp
     struct tcphdr* tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
     sub->protocol = IPP_TCP;
 
-    tcp_hdr->srcport = htons(rand_uint16()); // FIXME: Set to random 16bit wide (u)integer
-    tcp_hdr->dstport = tcp->srcport;
+    tcp_hdr->srcport = (stream->stream_port); // FIXME: Set to random 16bit wide (u)integer
+    tcp_hdr->dstport = (1);
     tcp_hdr->seq = seq_num;
     tcp_hdr->ack_seq = ack_num;
     tcp_hdr->header_len = 5;
