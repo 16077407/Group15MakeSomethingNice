@@ -127,7 +127,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->option_type = 2;
         tcp_hdr->option_length = 4;
         tcp_hdr->option_value = htons(0x534);
-        tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr));
+        tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
         debug_tcp_hdr(tcp_hdr);
 
         return_ip_out = ip_output(htonl(stream_data->dst_addr), sub);
