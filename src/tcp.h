@@ -50,7 +50,6 @@ struct tcphdr {
     unsigned int option_type : 8;
     unsigned int option_length : 8;
     uint16_t option_value;
-    uint16_t option_end; 
 } __attribute__((packed));
 
 
