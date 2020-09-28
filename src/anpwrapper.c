@@ -199,7 +199,7 @@ int tcp_rx(struct subuff *sub){
     printf("\n[!] RECIEVED TCP PACKET\n\n");
     struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
     struct tcphdr *tcp_header = (struct tcphdr *)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
-    struct tcp_stream_info *stream_data = open_streams_port[tcp_header->dstport];
+    struct tcp_stream_info *stream_data = open_streams_port[ntohs(tcp_header->dstport)];
     printf("[D] Check 1 %d\n", stream_data->stream_port);
     
     if (tcp_header->ack_seq == stream_data->last_unacked_seq) {
