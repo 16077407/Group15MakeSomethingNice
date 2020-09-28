@@ -123,7 +123,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         tcp_hdr->ack_seq=0;//htonl(2863311530);
         tcp_hdr->syn=1;
-        tcp_hdr->header_len=9;
+        tcp_hdr->header_len=5;
         tcp_hdr->option_type = 2;
         tcp_hdr->option_length = 4;
         tcp_hdr->option_value = htons(534);
@@ -177,7 +177,7 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         tcp_hdr->srcport = htons(stream_data->stream_port);
         tcp_hdr->dstport = htons(dst_port);
         tcp_hdr->header_len = 5;
-        tcp_hdr->win=htons(4096);
+        tcp_hdr->win=htons(64240);
         tcp_hdr->urp=0;
 
         return sub;
