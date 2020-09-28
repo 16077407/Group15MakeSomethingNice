@@ -199,6 +199,7 @@ int tcp_rx(struct subuff *sub){
                     reply_hdr->dstport = reply_hdr->srcport;
                     reply_hdr->srcport = storage;
                     reply_hdr->syn=0;
+                    reply_hdr->ack=1;
                     reply_hdr->ack_seq = tcp_header->seq;
                     reply_hdr->seq = htonl(ntohl(tcp_header->seq)+1); // Increment Seq
                     reply_hdr->csum = htons(do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), ip_header->saddr));
