@@ -30,6 +30,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define VERBOSE 0
+
 struct tcp_stream_info *open_streams_port[1<<16-1];
 struct tcp_stream_info *open_streams_fd[MAX_CUSTOM_TCP_FD-MIN_CUSTOM_TCP_FD];
 int LAST_ISSUED_TCP_FD = MIN_CUSTOM_TCP_FD;
@@ -106,16 +108,18 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         struct subuff *sub = alloc_sub(ETH_HDR_LEN+IP_HDR_LEN);
         int return_ip_out;
         do {
-            printf("[?] Sending lookup request for dst_addr...\n");
+            if (VERBOSE) printf("[?] Sending lookup request for dst_addr...\n");
             return_ip_out = ip_output(htonl(stream_data->dst_addr), sub); 
             printf("[=] Waiting on resolve\n");
             sleep(1);
         } while (return_ip_out==-11);
-        if (return_ip_out==-1) 
-        free_sub(sub);
 
-        printf("[+] Constructing TCP_SYN...\n");
+        if (return_ip_out==-1) {
+            free_sub(sub);
+            return -1;
+        }
 
+        if (VERBOSE) printf("[+] Constructing TCP_SYN...\n"); 
         sub = tcp_base(stream_data, stream_data->dst_addr, dst_port);
         struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
@@ -127,28 +131,24 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->option_length = 4;
         tcp_hdr->option_value = htons(0x534);
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr));
-        tcp_hdr->csum = htons(tcp_hdr->csum);
         debug_tcp_hdr(tcp_hdr);
-        
+
         return_ip_out = ip_output(htonl(stream_data->dst_addr), sub);
-        printf("[$] Result of ip_output: %d\n\n", return_ip_out); 
-        hexDump("[X] Dump of Packet sent", sub->head, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN ); 
         if (return_ip_out>=0) {
             // Sent some bytes?
             while(stream_data->state<1 && stream_data->state>=0) {
-                printf("[~] Waiting on state change, cur=%d, expected=>1\n", stream_data->state);
+                if (VERBOSE) printf("[~] Waiting on state change, cur=%d, expected=>1\n", stream_data->state);
                 sleep(2);
             }
-            printf("[~] Done waiting, reached state %d\n",stream_data->state);
-            free_sub(sub);
+            if (VERBOSE) printf("[~] Done waiting, reached state %d\n",stream_data->state);
             return 0;
         } else if (return_ip_out==-1){
             printf("[!] No route to host?\n");
-            return -1;
         } else {
             printf("[!] Unknown err: %d\n", return_ip_out);
-            return return_ip_out;
         } 
+        free_sub(sub);
+        return -1;
     }
     // the default path
     return _connect(sockfd, addr, addrlen);
@@ -159,9 +159,7 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN );
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN );
         sub->protocol = IPP_TCP; //Set TCP protocol
-        // Set TCP Header Values
-        //
-        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN); //sub->head+ETH_HDR_LEN+IP_HDR_LEN;
+        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
 
         tcp_hdr->srcport = htons(stream_data->stream_port);
         tcp_hdr->dstport = htons(dst_port);
@@ -180,19 +178,17 @@ int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp,
 }
 
 int tcp_rx(struct subuff *sub){
-    printf("\n[!] RECIEVED TCP PACKET\n\n");
     struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
     struct tcphdr *tcp_header = (struct tcphdr *)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
     struct tcp_stream_info *stream_data = open_streams_port[ntohs(tcp_header->dstport)];
-    printf("[D] Check 1 %d\n", stream_data->state);
-    
+
     if (ntohl(tcp_header->ack_seq) == stream_data->last_unacked_seq+1) {
         // VALID PACKET ORDERING CHECKED
         switch (stream_data->state) {
             case 0: // EXPECTING SYN-ACK
                 if (tcp_header->ack && tcp_header->syn) { 
                     stream_data->last_unacked_seq=tcp_header->seq+1;
-                    // tcp_ack(stream_data, ip_header, tcp_header, sub, tcp_header->seq+1, tcp_header->seq)
+
                     struct subuff* synack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
                     struct tcphdr *reply_hdr = (struct tcphdr *)synack->data;
                     memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
@@ -203,7 +199,7 @@ int tcp_rx(struct subuff *sub){
                     reply_hdr->syn=0;
                     reply_hdr->ack=1;
                     reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+1);
-                    reply_hdr->seq = tcp_header->ack_seq;//htonl(ntohl(tcp_header->seq)-1); // Increment Seq
+                    reply_hdr->seq = tcp_header->ack_seq;// Increment Seq
                     stream_data->last_unacked_seq = ntohl(reply_hdr->seq);
                     reply_hdr->csum = 0;
                     reply_hdr->option_type = 1;
@@ -211,12 +207,16 @@ int tcp_rx(struct subuff *sub){
                     reply_hdr->option_value=0x100;
                     reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
 
-                    hexDump("[=] Recieved SYN-ACK, replyed with ACK", reply_hdr, TCP_HDR_LEN);
                     ip_output(ip_header->saddr, synack);
                     stream_data->state+=1;
                     break;
+                } else if (tcp_header->rst || tcp_header->fin) {
+                    // Teardown/End connection
+                    if (VERBOSE) printf("[!] Recieved request to end connection (RST/FIN).\n");
+                    stream_data->state=-1;
+                    goto drop_pkt;
                 } else {
-                    printf("[!] Dropping packet, not SYN-ACK\n");
+                    if (VERBOSE) printf("[!] Dropping packet, not expected by state=%d\n",stream_data->state);
                     goto drop_pkt;
                 }
             default: // ESTABLISHED connection, appending data to stream buffer
@@ -274,12 +274,10 @@ void _function_override_init()
     _close = dlsym(RTLD_NEXT, "close");
 }
 
-
 uint16_t  rand_uint16(){
     uint16_t r = 0;
     for(int i = 0; i<16; i++){
-    r = r*2 + rand()%2;
+        r = r*2 + rand()%2;
     }
-    printf("[#] Random number 16 bits unsigned int: %d\n", r );
     return r;
 }
