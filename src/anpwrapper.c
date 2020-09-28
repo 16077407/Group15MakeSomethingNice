@@ -114,10 +114,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
             sleep(1);
         } while (return_ip_out==-11);
 
-        if (return_ip_out==-1) {
-            free_sub(sub);
-            return -1;
-        }
+        if (return_ip_out==-1) free_sub(sub);
 
         if (VERBOSE) printf("[+] Constructing TCP_SYN...\n"); 
         sub = tcp_base(stream_data, stream_data->dst_addr, dst_port);
