@@ -135,7 +135,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         hexDump("[X] Dump of Packet sent", sub->head, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN ); 
         if (return_ip_out>=0) {
             // Sent some bytes?
-            while(stream_data->state<2 && stream_data->state>=0) {
+            while(stream_data->state<1 && stream_data->state>=0) {
                 printf("[~] Waiting on state change, cur=%d, expected=>2\n", stream_data->state);
                 sleep(2);
             }
