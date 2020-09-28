@@ -218,7 +218,7 @@ int tcp_rx(struct subuff *sub){
                 goto drop_pkt;
         }
     } else {
-        printf("%s\n", "TCP SYN ACK was not correct");
+        printf("TCP SYN ACK was not correct, %u!=%u\n", ntohl(tcp_header->ack_seq), stream_data->last_unacked_seq);
     }
 drop_pkt:
     free_sub(sub);
