@@ -123,7 +123,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         tcp_hdr->ack_seq=0;//htonl(2863311530);
         tcp_hdr->syn=1;
-        tcp_hdr->header_len=5;
+        tcp_hdr->header_len=6;
         tcp_hdr->option_type = 2;
         tcp_hdr->option_length = 4;
         tcp_hdr->option_value = htons(534);
