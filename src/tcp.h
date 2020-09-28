@@ -47,7 +47,9 @@ struct tcphdr {
     uint16_t win;
     uint16_t csum;
     uint16_t urp;
-    uint16_t options;
+    unsigned int option_type : 8;
+    unsigned int option_length : 8;
+    uint16_t option_value;
 } __attribute__((packed));
 
 
