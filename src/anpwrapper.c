@@ -99,14 +99,15 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         int optlen = 0;
 
         // Set/get the destination addr
-        uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
+        stream_data->dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
+        stream_data->src_addr = ip_str_to_n32("10.0.0.4");
         uint16_t dst_port = ntohs(((struct sockaddr_in *)addr)->sin_port);
 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN+IP_HDR_LEN);
         int return_ip_out;
         do {
             printf("[?] Sending lookup request for dst_addr...\n");
-            return_ip_out = ip_output(htonl(dst_addr), sub); 
+            return_ip_out = ip_output(htonl(stream_data->dst_addr), sub); 
             printf("[=] Waiting on resolve\n");
             sleep(1);
         } while (return_ip_out==-11);
@@ -115,7 +116,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 
         printf("[+] Constructing TCP_SYN...\n");
 
-        sub = tcp_base(stream_data, dst_addr, dst_port);
+        sub = tcp_base(stream_data, stream_data->dst_addr, dst_port);
         struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         stream_data->last_unacked_seq = stream_data->initial_seq;
@@ -125,11 +126,11 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->option_type = 2;
         tcp_hdr->option_length = 4;
         tcp_hdr->option_value = htons(0x534);
-        tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
+        tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr));
         tcp_hdr->csum = htons(tcp_hdr->csum);
         debug_tcp_hdr(tcp_hdr);
         
-        return_ip_out = ip_output(htonl(dst_addr), sub);
+        return_ip_out = ip_output(htonl(stream_data->dst_addr), sub);
         printf("[$] Result of ip_output: %d\n\n", return_ip_out); 
         hexDump("[X] Dump of Packet sent", sub->head, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN ); 
         if (return_ip_out>=0) {
