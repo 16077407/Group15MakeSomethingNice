@@ -97,13 +97,15 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     if(is_anp_sockfd){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
 
+        printf("\n[DBG] ETH_HDR_LEN = %ld\n\tIP_HDR_LEN = %ld\n\tSUM = %ld\n\tTCP_HDR_LEN = %ld\n\tTOTAL = %ld\n\n", ETH_HDR_LEN, IP_HDR_LEN, ETH_HDR_LEN+IP_HDR_LEN, TCP_HDR_LEN, TCP_HDR_LEN+ETH_HDR_LEN+IP_HDR_LEN);
+
         // Set/get the destination addr
         uint32_t dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
         uint16_t dst_port = ((struct sockaddr_in *)addr)->sin_port;
         printf("[!] I believe the dest addr is: %s:%d\n", inet_ntoa(((struct sockaddr_in *)addr)->sin_addr), dst_port);
 
         struct subuff* sub = tcp_base(stream_data, dst_addr, dst_port);
-        struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
+        struct tcphdr *tcp_hdr = (struct tcphdr *)sub->head+ETH_HDR_LEN+IP_HDR_LEN;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         tcp_hdr->ack_seq=htonl(2863311530);
         tcp_hdr->syn=1;
@@ -158,7 +160,6 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + 6);
         sub->protocol = IPP_TCP; //Set TCP protocol
         // Set TCP Header Values
-        printf("\n[DBG] ETH_HDR_LEN = %ld\n\tIP_HDR_LEN = %ld\n\tSUM = %ld\n\tTCP_HDR_LEN = %ld\n\tTOTAL = %ld\n\n", ETH_HDR_LEN, IP_HDR_LEN, ETH_HDR_LEN+IP_HDR_LEN, TCP_HDR_LEN, TCP_HDR_LEN+ETH_HDR_LEN+IP_HDR_LEN);
         //
         struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN); //sub->head+ETH_HDR_LEN+IP_HDR_LEN;
 
