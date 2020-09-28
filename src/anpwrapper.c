@@ -112,7 +112,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 
         printf("[?] Sending lookup request for dst_addr...\n");
         int return_ip_out = ip_output(htonl(dst_addr), sub);
-        hexDump("[X] Dump of Packet sent", sub->head, ETH_HDR_LEN+IP_HDR_LEN + TCP_HDR_LEN );
+        hexDump("[X] Dump of Packet sent", sub->head+ETH_HDR_LEN, IP_HDR_LEN + TCP_HDR_LEN );
         if (return_ip_out!=-11 && return_ip_out<0) return -1;
 
         // We now have the set IP Headers to fiddle with
@@ -127,7 +127,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
             debug_tcp_hdr(tcp_hdr);
             return_ip_out = ip_output(htonl(dst_addr), sub);
             printf("[=%d] Result of ip_output: %d\n\n", counter, return_ip_out); 
-            hexDump("[X] Dump of Packet sent", sub->head, ETH_HDR_LEN+IP_HDR_LEN + TCP_HDR_LEN );
+            hexDump("[X] Dump of Packet sent", sub->head+ETH_HDR_LEN, IP_HDR_LEN + TCP_HDR_LEN );
 
             if (return_ip_out>=0) {
                 // Sent some bytes?
