@@ -110,6 +110,10 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         hexDump("[X] Dump of constructed subuff", sub->head, ETH_HDR_LEN+IP_HDR_LEN);
 
         if (return_ip_out!=-11 && return_ip_out<0) return -1;
+        while(ip_output(htonl(dst_addr), sub)==-11){
+            printf("[=] Waiting on resolve\n");
+            sleep(1);
+        }
 
         printf("[+] Constructing TCP_SYN...\n");
         free_sub(sub);
