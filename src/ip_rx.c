@@ -52,15 +52,15 @@ int ip_rx(struct subuff *sub){
     ih->len = ntohs(ih->len);
     ih->id = ntohs(ih->id);
 
-    debug_ip_hdr("in", ih);
+    /* debug_ip_hdr("in", ih); */
 
     switch (ih->proto) {
         case IPP_NUM_ICMP:
-            debug_ip("incoming ICMP packet\n");
+            debug_ip("[*] incoming ICMP packet\n");
             icmp_rx(sub);
             return 0;
         case IPP_TCP:
-            printf("incoming TCP packet, further logic NYI \n");
+            printf("[*] incoming TCP packet, further logic NYI \n");
             tcp_rx(sub);
             return 0;
         case 17:
