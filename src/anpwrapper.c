@@ -96,6 +96,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
+        int optlen = 0;
 
         printf("\n[DBG] ETH_HDR_LEN = %ld\n\tIP_HDR_LEN = %ld\n\tSUM = %ld\n\tTCP_HDR_LEN = %ld\n\tTOTAL = %ld\n\n", ETH_HDR_LEN, IP_HDR_LEN, ETH_HDR_LEN+IP_HDR_LEN, TCP_HDR_LEN, TCP_HDR_LEN+ETH_HDR_LEN+IP_HDR_LEN);
 
@@ -122,7 +123,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         tcp_hdr->ack_seq=0;//htonl(2863311530);
         tcp_hdr->syn=1;
-        tcp_hdr->header_len=6;
+        tcp_hdr->header_len=(unsigned int)(TCP_HDR_LEN+optlen)/8;
         tcp_hdr->csum = htons(do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), dst_addr));
         debug_tcp_hdr(tcp_hdr);
 
