@@ -170,8 +170,8 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         //
         struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN); //sub->head+ETH_HDR_LEN+IP_HDR_LEN;
 
-        tcp_hdr->srcport = stream_data->stream_port;
-        tcp_hdr->dstport = dst_port;
+        tcp_hdr->srcport = htons(stream_data->stream_port);
+        tcp_hdr->dstport = htons(dst_port);
         tcp_hdr->header_len = 5;
         tcp_hdr->win=htons(4096);
         tcp_hdr->urp=0;
