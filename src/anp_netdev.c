@@ -89,6 +89,7 @@ int netdev_transmit(struct subuff *sub, uint8_t *dst_hw, uint16_t ethertype)
     memcpy(hdr->dmac, dst_hw, dev->addr_len);
     memcpy(hdr->smac, dev->hwaddr, dev->addr_len);
     hdr->ethertype = htons(ethertype);
+    printf("[!!] Passing to tdev...\n");
     ret = tdev_write((char *)sub->data, sub->len);
     return ret;
 }
