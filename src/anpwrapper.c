@@ -138,7 +138,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
                 sleep(2);
             }
             if (VERBOSE) printf("[~] Done waiting, reached state %d\n",stream_data->state);
-            return 0;
+            if (stream_data->state>=0) return 0;
         } else if (return_ip_out==-1){
             printf("[!] No route to host?\n");
         } else {
