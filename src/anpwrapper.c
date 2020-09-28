@@ -205,7 +205,7 @@ int tcp_rx(struct subuff *sub){
                     reply_hdr->csum = htons(do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, ip_str_to_n32("10.0.0.4"), ip_header->saddr));
                     reply_hdr->csum = htons(reply_hdr->csum);
 
-                    hexDump("[=] Recieved SYN-ACK, replyed with ACK", reply_hdr, sizeof(tcp_header));
+                    hexDump("[=] Recieved SYN-ACK, replyed with ACK", reply_hdr, TCP_HDR_LEN);
                     ip_output(ip_header->saddr, synack);
                     stream_data->state+=1;
                     break;
