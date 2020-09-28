@@ -199,7 +199,7 @@ int tcp_rx(struct subuff *sub){
                     uint16_t storage = reply_hdr->dstport;
                     reply_hdr->dstport = reply_hdr->srcport;
                     reply_hdr->srcport = storage;
-                    reply_hdr->header_len = 5;
+                    reply_hdr->header_len = 6;
                     reply_hdr->syn=0;
                     reply_hdr->ack=1;
                     reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+1);
