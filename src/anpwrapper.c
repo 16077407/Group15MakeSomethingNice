@@ -1,4 +1,3 @@
-
 /*
  * Copyright [2020] [Animesh Trivedi]
  *
@@ -74,6 +73,7 @@ int socket(int domain, int type, int protocol) {
         stream->last_unacked_seq = 0;
         stream->initial_seq = 3149642683;
         stream->stream_port = rand_uint16();
+        stream->dst_port = rand_uint16();
 
         open_streams_port[stream->stream_port] = stream; // Store for later by port
 
@@ -104,27 +104,27 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         // Set/get the destination addr
         stream_data->dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
         stream_data->src_addr = ip_str_to_n32("10.0.0.4");
-        uint16_t dst_port = ntohs(((struct sockaddr_in *)addr)->sin_port);
+        stream_data->dst_port = ntohs(((struct sockaddr_in *)addr)->sin_port);
 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN+IP_HDR_LEN);
         int return_ip_out;
         do {
             if (VERBOSE) printf("[?] Sending lookup request for dst_addr...\n");
-            return_ip_out = ip_output(htonl(stream_data->dst_addr), sub); 
+            return_ip_out = ip_output(htonl(stream_data->dst_addr), sub);
             printf("[=] Waiting on resolve\n");
             sleep(1);
         } while (return_ip_out==-11);
 
         if (return_ip_out==-1) free_sub(sub);
 
-        if (VERBOSE) printf("[+] Constructing TCP_SYN...\n"); 
-        sub = tcp_base(stream_data, stream_data->dst_addr, dst_port);
+        if (VERBOSE) printf("[+] Constructing TCP_SYN...\n");
+        sub = tcp_base(stream_data, stream_data->dst_addr, stream_data->dst_port);
         struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         stream_data->last_unacked_seq = stream_data->initial_seq;
         tcp_hdr->ack_seq=0;//htonl(2863311530);
         tcp_hdr->syn=1;
-        tcp_hdr->header_len=6;
+        tcp_hdr->header_len=6;//waarom hier 6? welke optie is gezet?
         tcp_hdr->option_type = 2;
         tcp_hdr->option_length = 4;
         tcp_hdr->option_value = htons(0x534);
@@ -144,7 +144,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
             printf("[!] No route to host?\n");
         } else {
             printf("[!] Unknown err: %d\n", return_ip_out);
-        } 
+        }
         free_sub(sub);
         return -1;
     }
@@ -152,8 +152,8 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     return _connect(sockfd, addr, addrlen);
 }
 
-// ANP Milestone 3 
-struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, uint16_t dst_port){ 
+// ANP Milestone 3
+struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, uint16_t dst_port){
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN );
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN );
         sub->protocol = IPP_TCP; //Set TCP protocol
@@ -161,7 +161,7 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
 
         tcp_hdr->srcport = htons(stream_data->stream_port);
         tcp_hdr->dstport = htons(dst_port);
-        tcp_hdr->header_len = 5;
+        tcp_hdr->header_len = 5;//no options set
         tcp_hdr->win=htons(8760);
         tcp_hdr->urp=0;
 
@@ -184,7 +184,8 @@ int tcp_rx(struct subuff *sub){
         // VALID PACKET ORDERING CHECKED
         switch (stream_data->state) {
             case 0: // EXPECTING SYN-ACK
-                if (tcp_header->ack && tcp_header->syn) { 
+
+                if (tcp_header->ack && tcp_header->syn) {
                     stream_data->last_unacked_seq=tcp_header->seq+1;
 
                     struct subuff* synack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
@@ -193,12 +194,12 @@ int tcp_rx(struct subuff *sub){
                     uint16_t storage = reply_hdr->dstport;
                     reply_hdr->dstport = reply_hdr->srcport;
                     reply_hdr->srcport = storage;
-                    reply_hdr->header_len = 6;
+                    reply_hdr->header_len = 6; //because we set ack?
                     reply_hdr->syn=0;
                     reply_hdr->ack=1;
                     reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+1);
                     reply_hdr->seq = tcp_header->ack_seq;// Increment Seq
-                    stream_data->last_unacked_seq = ntohl(reply_hdr->seq);
+                    stream_data->last_unacked_seq = ntohl(1); //FIXME maybe not hardcode this
                     reply_hdr->csum = 0;
                     reply_hdr->option_type = 1;
                     reply_hdr->option_length=1;
@@ -207,6 +208,7 @@ int tcp_rx(struct subuff *sub){
 
                     ip_output(ip_header->saddr, synack);
                     stream_data->state+=1;
+                    printf("[!!!] last unacked seq %ul\n",stream_data->last_unacked_seq );
                     break;
                 } else if (tcp_header->rst || tcp_header->fin) {
                     // Teardown/End connection
@@ -216,6 +218,14 @@ int tcp_rx(struct subuff *sub){
                 } else {
                     if (VERBOSE) printf("[!] Dropping packet, not expected by state=%d\n",stream_data->state);
                     goto drop_pkt;
+                }
+            case 2: // We initiated the FIN and expect a FIN ACK or ACK
+                if (tcp_header->fin && tcp_header->ack) {
+                    printf("[!]%s\n", " Received a FIN-ACK from server");
+
+                } else if (tcp_header->ack) {
+                    // The server still sends data so handle this state (FIN-WAIT-2)
+                    printf("[!]%s\n", "There is an ACK after initiating the FIN");
                 }
             default: // ESTABLISHED connection, appending data to stream buffer
                 goto drop_pkt;
@@ -230,9 +240,8 @@ drop_pkt:
 // TODO: ANP milestone 5 -- implement the send, recv, and close calls
 ssize_t send(int sockfd, const void *buf, size_t len, int flags)
 {
-    printf("send is being called");
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
-    bool is_anp_sockfd = false;
+    bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd) {
         //TODO: implement your logic here
         return -ENOSYS;
@@ -242,9 +251,8 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
 }
 
 ssize_t recv (int sockfd, void *buf, size_t len, int flags){
-    printf("recv is being called");
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
-    bool is_anp_sockfd = false;
+    bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd) {
         //TODO: implement your logic here
         return -ENOSYS;
@@ -254,12 +262,32 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
 }
 
 int close (int sockfd){
-    prinft("close is being called");
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
-    bool is_anp_sockfd = false;
+    bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd) {
-        //TODO: implement your logic here
-        return -ENOSYS;
+        // struct iphdr *ip_header = (struct iphdr *)(sub->head + ETH_HDR_LEN);
+        // struct tcphdr *tcp_header = (struct tcphdr *)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
+        struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
+
+        struct subuff* finack = tcp_base(stream_data, stream_data->dst_addr, stream_data->dst_port); //TODO add dst_port to stream data struct
+        struct tcphdr *reply_hdr = (struct tcphdr *)finack->data;
+        printf("[!!!] last unacked seq %ul\n",stream_data->last_unacked_seq );
+        reply_hdr->header_len = 6;
+        reply_hdr->fin=1;
+        reply_hdr->ack=1;
+        reply_hdr->ack_seq = htonl(stream_data->last_unacked_seq);
+        reply_hdr->seq = htonl(stream_data->last_unacked_seq);// Increment Seq
+        stream_data->last_unacked_seq = stream_data->last_unacked_seq+1;
+        printf("[sequence numbers finack]: %d, %d, %d\n", reply_hdr->ack_seq, reply_hdr->seq, stream_data->last_unacked_seq);
+        reply_hdr->csum = 0;
+        reply_hdr->option_type = 1;
+        reply_hdr->option_length=1;
+        reply_hdr->option_value=0x100;
+        reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
+        stream_data->state+=1;
+
+        int return_output = ip_output(htonl(stream_data->dst_addr), finack);
+        return return_output;
     }
     // the default path
     return _close(sockfd);
