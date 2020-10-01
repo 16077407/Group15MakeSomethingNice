@@ -1,3 +1,4 @@
+
 /*
  * Copyright [2020] [Animesh Trivedi]
  *
@@ -229,6 +230,7 @@ drop_pkt:
 // TODO: ANP milestone 5 -- implement the send, recv, and close calls
 ssize_t send(int sockfd, const void *buf, size_t len, int flags)
 {
+    printf("send is being called");
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = false;
     if(is_anp_sockfd) {
@@ -240,6 +242,7 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
 }
 
 ssize_t recv (int sockfd, void *buf, size_t len, int flags){
+    printf("recv is being called");
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = false;
     if(is_anp_sockfd) {
@@ -251,6 +254,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
 }
 
 int close (int sockfd){
+    prinft("close is being called");
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = false;
     if(is_anp_sockfd) {
