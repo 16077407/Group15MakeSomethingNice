@@ -114,6 +114,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         stream_data->dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
         stream_data->src_addr = ip_str_to_n32(ANP_IP_CLIENT_EXT);
         uint16_t dst_port = ntohs(((struct sockaddr_in *)addr)->sin_port);
+        stream_data->dst_port = dst_port;
 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN+IP_HDR_LEN);
         int return_ip_out;
@@ -127,7 +128,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         if (return_ip_out==-1) free_sub(sub);
 
         if (VERBOSE) printf("[+] Constructing TCP_SYN...\n");
-        sub = tcp_base(stream_data, stream_data->dst_addr, stream_data->dst_port);
+        sub = tcp_base(stream_data, stream_data->dst_addr, dst_port);
         struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         stream_data->last_unacked_seq = stream_data->initial_seq;
