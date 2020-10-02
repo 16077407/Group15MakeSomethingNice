@@ -218,7 +218,6 @@ int tcp_rx(struct subuff *sub){
 
                     ip_output(ip_header->saddr, synack);
                     stream_data->state+=1;
-                    printf("[!!!] last unacked seq %ul\n",stream_data->last_unacked_seq );
                     break;
                 } else if (tcp_header->rst || tcp_header->fin) {
                     // Teardown/End connection
