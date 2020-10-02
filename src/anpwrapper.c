@@ -121,7 +121,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         do {
             if (VERBOSE) printf("[?] Sending lookup request for dst_addr...\n");
             return_ip_out = ip_output(htonl(stream_data->dst_addr), sub);
-            printf("[=] Waiting on resolve\n");
+            if (VERBOSE) printf("[=] Waiting on resolve\n");
             sleep(1);
         } while (return_ip_out==-11);
 
