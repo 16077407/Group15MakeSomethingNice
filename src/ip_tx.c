@@ -44,9 +44,8 @@ int dst_neigh_output(struct subuff *sub)
         dst_addr = rt->gateway;
     }
     target_dst_mac = arp_get_hwaddr(dst_addr);
-    
+
     if (target_dst_mac) {
-        printf("\n\n[!!] PASSING PACKET TO NETDEV.\n\n");
         return netdev_transmit(sub, target_dst_mac, ETH_P_IP);
     } else {
         arp_request(src_addr, dst_addr, anp_netdev);

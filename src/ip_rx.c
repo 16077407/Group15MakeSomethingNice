@@ -60,14 +60,14 @@ int ip_rx(struct subuff *sub){
             icmp_rx(sub);
             return 0;
         case IPP_TCP:
-            printf("[*] incoming TCP packet, further logic NYI \n");
+            printf("[*] Incoming TCP packet, further logic NYI \n");
             tcp_rx(sub);
             return 0;
         case 17:
-            printf("[-] incoming UDP packet, no handler registred, dropping\n");
+            printf("[-] Incoming UDP packet, no handler registred, dropping\n");
             goto drop_pkt;
         default:
-            printf("Error: Unknown IP header proto %d \n", ih->proto);
+            printf("[!] Error: Unknown IP header proto %d \n", ih->proto);
             goto drop_pkt;
     }
     drop_pkt:

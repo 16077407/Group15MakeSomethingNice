@@ -20,6 +20,7 @@
 
 #include <netinet/in.h>
 #include <dlfcn.h>
+#include "config.h"
 #include "systems_headers.h"
 #include "linklist.h"
 #include "anpwrapper.h"
@@ -46,6 +47,14 @@ static ssize_t (*_recv)(int fd, void *buf, size_t n, int flags) = NULL;
 static int (*_connect)(int sockfd, const struct sockaddr *addr, socklen_t addrlen) = NULL;
 static int (*_socket)(int domain, int type, int protocol) = NULL;
 static int (*_close)(int sockfd) = NULL;
+
+uint16_t  rand_uint16(){
+    uint16_t r = 0;
+    for(int i = 0; i<16; i++){
+        r = r*2 + rand()%2;
+    }
+    return r;
+}
 
 static int is_socket_supported(int domain, int type, int protocol)
 {
@@ -102,7 +111,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 
         // Set/get the destination addr
         stream_data->dst_addr = (((struct sockaddr_in *)addr)->sin_addr).s_addr;
-        stream_data->src_addr = ip_str_to_n32("10.0.0.4");
+        stream_data->src_addr = ip_str_to_n32(ANP_IP_CLIENT_EXT);
         uint16_t dst_port = ntohs(((struct sockaddr_in *)addr)->sin_port);
 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN+IP_HDR_LEN);
@@ -116,29 +125,34 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 
         if (return_ip_out==-1) free_sub(sub);
 
+        // Construct actual packet to be sent.
         if (VERBOSE) printf("[+] Constructing TCP_SYN...\n"); 
         sub = tcp_base(stream_data, stream_data->dst_addr, dst_port);
         struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         stream_data->last_unacked_seq = stream_data->initial_seq;
-        tcp_hdr->ack_seq=0;//htonl(2863311530);
+        tcp_hdr->ack_seq=0;
         tcp_hdr->syn=1;
         tcp_hdr->header_len=6;
         tcp_hdr->option_type = 2;
         tcp_hdr->option_length = 4;
         tcp_hdr->option_value = htons(0x534);
+
+        //Setup the Header CSUM
         tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
         debug_tcp_hdr(tcp_hdr);
 
         return_ip_out = ip_output(htonl(stream_data->dst_addr), sub);
         if (return_ip_out>=0) {
             // Sent some bytes?
-            while(stream_data->state<1 && stream_data->state>=0) {
+            stream_data->state=1;
+            while(stream_data->state<2 && stream_data->state>=0) {
                 if (VERBOSE) printf("[~] Waiting on state change, cur=%d, expected=>1\n", stream_data->state);
                 sleep(2);
             }
             if (VERBOSE) printf("[~] Done waiting, reached state %d\n",stream_data->state);
             if (stream_data->state>=0) return 0;
+            if (VERBOSE) printf("[!] Unable to make connection with destinationhost.\n");
         } else if (return_ip_out==-1){
             printf("[!] No route to host?\n");
         } else {
@@ -167,9 +181,6 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         return sub;
 }
 
-int tcp_ack(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, int ack_num){
-}
-
 int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, void *data, ssize_t data_length){
 
 }
@@ -182,7 +193,7 @@ int tcp_rx(struct subuff *sub){
     if (ntohl(tcp_header->ack_seq) == stream_data->last_unacked_seq+1) {
         // VALID PACKET ORDERING CHECKED
         switch (stream_data->state) {
-            case 0: // EXPECTING SYN-ACK
+            case 1: // EXPECTING SYN-ACK
                 if (tcp_header->ack && tcp_header->syn) { 
                     stream_data->last_unacked_seq=tcp_header->seq+1;
 
@@ -271,10 +282,3 @@ void _function_override_init()
     _close = dlsym(RTLD_NEXT, "close");
 }
 
-uint16_t  rand_uint16(){
-    uint16_t r = 0;
-    for(int i = 0; i<16; i++){
-        r = r*2 + rand()%2;
-    }
-    return r;
-}
