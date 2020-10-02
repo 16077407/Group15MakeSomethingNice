@@ -278,7 +278,7 @@ int close (int sockfd){
         // struct tcphdr *tcp_header = (struct tcphdr *)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
 
-        struct subuff* finack = tcp_base(stream_data, stream_data->dst_addr, stream_data->dst_port); //TODO add dst_port to stream data struct
+        struct subuff* finack = tcp_base(stream_data, stream_data->dst_addr, stream_data->dst_port); //TODO add dst_port to stream data struct | no worries, added now
         struct tcphdr *reply_hdr = (struct tcphdr *)finack->data;
         printf("[!!!] last unacked seq %ul\n",stream_data->last_unacked_seq );
         reply_hdr->header_len = 6;
