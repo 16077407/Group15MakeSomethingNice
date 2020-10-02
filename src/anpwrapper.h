@@ -35,6 +35,7 @@ struct tcp_stream_info {
     uint32_t initial_seq;
     uint32_t last_unacked_seq;
     uint16_t stream_port;
+    uint16_t dst_port;
     uint32_t dst_addr;
     uint32_t src_addr;
     void *rx_in;
