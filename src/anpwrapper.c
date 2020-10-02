@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define VERBOSE 1
+#define VERBOSE 0
 
 struct tcp_stream_info *open_streams_port[1<<16-1];
 struct tcp_stream_info *open_streams_fd[MAX_CUSTOM_TCP_FD-MIN_CUSTOM_TCP_FD];
