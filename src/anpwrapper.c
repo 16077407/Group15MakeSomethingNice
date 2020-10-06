@@ -253,7 +253,12 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd) {
         //TODO: implement your logic here
-        return -ENOSYS;
+             struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
+             
+             struct subuff* send = tcp_base(stream_data, stream_data->dst_addr, stream_data->dst_port);
+             struct tcphdr *reply_hdr = (struct tcphdr *)send->data;
+            
+        return _send(sockfd, buf, len, flags);
     }
     // the default path
     return _send(sockfd, buf, len, flags);
