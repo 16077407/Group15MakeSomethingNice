@@ -282,6 +282,7 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
 
         reply_hdr->csum = 0;
         reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr)+payload_accepted, IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
+        send->len += payload_accepted;
 
         int ip_output_ret = ip_output(stream_data->dst_addr, send);
         if (ip_output_ret>0) return (ip_output_ret-TCP_HDR_LEN-IP_HDR_LEN-ETH_HDR_LEN);
