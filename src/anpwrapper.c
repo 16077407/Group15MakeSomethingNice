@@ -335,8 +335,8 @@ int close (int sockfd){
         /* reply_hdr->ack=1; */
         reply_hdr->ack_seq = htonl(stream_data->last_seq_sent);
         reply_hdr->seq = htonl(stream_data->last_seq_sent);// Increment Seq
-        stream_data->last_seq_sebt = stream_data->last_seq_sent+1;
-        printf("[sequence numbers finack]: %d, %d, %d\n", reply_hdr->ack_seq, reply_hdr->seq, stream_data->last_unacked_seq);
+        stream_data->last_seq_sent = stream_data->last_seq_sent+1;
+        printf("[sequence numbers finack]: %d, %d, %d\n", reply_hdr->ack_seq, reply_hdr->seq, stream_data->last_seq_sent);
         reply_hdr->csum = 0;
         reply_hdr->option_type = 1;
         reply_hdr->option_length=1;
