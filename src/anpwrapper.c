@@ -225,7 +225,9 @@ int tcp_rx(struct subuff *sub){
                     reply_hdr->syn=0;
                     reply_hdr->ack=1;
                     reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+1);
+                    stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
                     reply_hdr->seq = tcp_header->ack_seq;// Increment Seq
+                    stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
                     reply_hdr->csum = 0;
                     reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
 
@@ -284,8 +286,8 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
         struct tcphdr *reply_hdr = (struct tcphdr *)send->data;
         reply_hdr->psh = 1;
         reply_hdr->ack = 1;
-        reply_hdr->seq = htonl(stream_data->last_seq_acked+1);
-        reply_hdr->ack_seq = htonl(stream_data->last_seq_acked);
+        reply_hdr->seq = htonl(stream_data->last_seq_acked);
+        reply_hdr->ack_seq = htonl(stream_data->last_ack_sent);
         memcpy(send->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN, buf, payload_accepted);
 
         reply_hdr->csum = 0;
@@ -298,7 +300,7 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
             return ip_output_ret;
         }
         // Wait on state->last_unacked
-        stream_data->last_seq_sent = stream_data->last_seq_acked+1;
+        stream_data->last_seq_sent = stream_data->last_seq_acked+payload_accepted;
         while(stream_data->last_seq_sent!=stream_data->last_seq_acked) {
             printf("[@] Sent: %ul, ACKd: %ul\n", stream_data->last_seq_sent, stream_data->last_seq_acked);
             sleep(1);

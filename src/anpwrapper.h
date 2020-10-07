@@ -35,6 +35,7 @@ struct tcp_stream_info {
     uint32_t initial_seq;
     volatile uint32_t last_seq_sent;
     volatile uint32_t last_seq_acked;
+    volatile uint32_t last_ack_sent;
     uint16_t stream_port;
     uint16_t dst_port;
     uint32_t dst_addr;
