@@ -194,6 +194,8 @@ int tcp_rx(struct subuff *sub){
     struct tcphdr *tcp_header = (struct tcphdr *)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
     struct tcp_stream_info *stream_data = open_streams_port[ntohs(tcp_header->dstport)];
 
+
+    printf("[!!] Recieved a packet while stream is in state %d\n", stream_data->state);
     // VALID PACKET ORDERING CHECKED
     switch (stream_data->state) {
         case 1: // EXPECTING SYN-ACK
