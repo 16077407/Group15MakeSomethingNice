@@ -1,6 +1,3 @@
-
-
-
 /*
  * Copyright [2020] [Animesh Trivedi]
  *
@@ -132,7 +129,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
 
         if (VERBOSE) printf("[+] Constructing TCP_SYN...\n");
         sub = tcp_base(stream_data, stream_data->dst_addr, dst_port);
-        struct tcphdr *tcp_hdr = (struct tcphdr *)sub->data;
+        struct tcphdr *tcp_hdr = (struct tcphdr *)sub->head+ETH_HDR_LEN+IP_HDR_LEN;
         tcp_hdr->seq=htonl(stream_data->initial_seq);
         stream_data->last_unacked_seq = stream_data->initial_seq;
         tcp_hdr->ack_seq=0;
@@ -140,7 +137,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         tcp_hdr->header_len=6;//waarom hier 6? welke optie is gezet? | Alleen MSS, de actuelle tcp header structuur heeft dus 8 extra bytes 
         tcp_hdr->option_type = 2;
         tcp_hdr->option_length = 4;
-        tcp_hdr->option_value = htons(0x534);
+        tcp_hdr->option_value = htons(TCP_MSS_SET);
 
         //Setup the Header CSUM
         tcp_hdr->csum = do_tcp_csum((void *)tcp_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
@@ -174,19 +171,35 @@ struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, 
         struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN );
         sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN );
         sub->protocol = IPP_TCP; //Set TCP protocol
-        struct tcphdr *tcp_hdr = (struct tcphdr*) sub_push(sub, TCP_HDR_LEN);
+        struct tcphdr *tcp_hdr = (struct tcphdr*)sub->head+ETH_HDR_LEN+IP_HDR_LEN; //sub_push(sub, TCP_HDR_LEN);
 
         tcp_hdr->srcport = htons(stream_data->stream_port);
         tcp_hdr->dstport = htons(dst_port);
-        tcp_hdr->header_len = 5;//no options set
+        tcp_hdr->header_len = 6;//no options set
         tcp_hdr->win=htons(8760);
         tcp_hdr->urp=0;
 
         return sub;
 }
 
-int tcp_tx(struct tcp_stream_info *stream, struct iphdr *ip, struct tcphdr *tcp, struct subuff *sub, int seq_num, void *data, ssize_t data_length){
+struct subuff *tcp_data(struct tcp_stream_info* stream_data, uint32_t dst_addr, uint16_t dst_port, size_t payload_len){
+        struct subuff *sub = alloc_sub(ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + payload_len);
+        sub_reserve(sub, ETH_HDR_LEN + IP_HDR_LEN + TCP_HDR_LEN + payload_len);
+        sub->protocol = IPP_TCP; //Set TCP protocol
+        struct tcphdr *tcp_hdr = (struct tcphdr*) sub->head+ETH_HDR_LEN+IP_HDR_LEN;// b_push(sub, TCP_HDR_LEN);
 
+        tcp_hdr->srcport = htons(stream_data->stream_port);
+        tcp_hdr->dstport = htons(dst_port);
+        tcp_hdr->header_len = 6;//no options set
+        tcp_hdr->win=htons(8760);
+        tcp_hdr->urp=0;
+
+        // Default
+        tcp_hdr->option_type = 1;
+        tcp_hdr->option_length=1;
+        tcp_hdr->option_value=0x100;
+
+        return sub;
 }
 
 int tcp_rx(struct subuff *sub){
@@ -204,7 +217,7 @@ int tcp_rx(struct subuff *sub){
                     stream_data->last_unacked_seq=tcp_header->seq+1;
 
                     struct subuff* synack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
-                    struct tcphdr *reply_hdr = (struct tcphdr *)synack->data;
+                    struct tcphdr *reply_hdr = (struct tcphdr *)synack->head+ETH_HDR_LEN+IP_HDR_LEN;
                     memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
                     uint16_t storage = reply_hdr->dstport;
                     reply_hdr->dstport = reply_hdr->srcport;
@@ -216,9 +229,6 @@ int tcp_rx(struct subuff *sub){
                     reply_hdr->seq = tcp_header->ack_seq;// Increment Seq
                     stream_data->last_unacked_seq = ntohl(1); //FIXME maybe not hardcode this
                     reply_hdr->csum = 0;
-                    reply_hdr->option_type = 1;
-                    reply_hdr->option_length=1;
-                    reply_hdr->option_value=0x100;
                     reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
 
                     ip_output(ip_header->saddr, synack);
@@ -259,12 +269,24 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd) {
         //TODO: implement your logic here
-             struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
-             
-             struct subuff* send = tcp_base(stream_data, stream_data->dst_addr, stream_data->dst_port);
-             struct tcphdr *reply_hdr = (struct tcphdr *)send->data;
-            
-        return _send(sockfd, buf, len, flags);
+        struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
+        size_t payload_accepted = len;
+        if (payload_accepted>TCP_MSS_SET) payload_accepted = TCP_MSS_SET;
+
+        struct subuff* send = tcp_data(stream_data, stream_data->dst_addr, stream_data->dst_port, payload_accepted);
+        struct tcphdr *reply_hdr = (struct tcphdr *)send->head+ETH_HDR_LEN+IP_HDR_LEN;
+        reply_hdr->psh = 1;
+        reply_hdr->seq = stream_data->last_unacked_seq;
+        reply_hdr->ack_seq = stream_data->last_unacked_seq;
+        memcpy(send->data, buf, payload_accepted);
+
+        reply_hdr->csum = 0;
+        reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr)+payload_accepted, IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
+
+        int ip_output_ret = ip_output(stream_data->dst_addr, send);
+        if (ip_output_ret>0) return (ip_output_ret-TCP_HDR_LEN-IP_HDR_LEN-ETH_HDR_LEN);
+        printf("[!] Err sending: %d\n", ip_output_ret);
+        return ip_output_ret;
     }
     // the default path
     return _send(sockfd, buf, len, flags);
@@ -290,11 +312,11 @@ int close (int sockfd){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
 
         struct subuff* finack = tcp_base(stream_data, stream_data->dst_addr, stream_data->dst_port); //TODO add dst_port to stream data struct | no worries, added now
-        struct tcphdr *reply_hdr = (struct tcphdr *)finack->data;
+        struct tcphdr *reply_hdr = (struct tcphdr *)finack->head+ETH_HDR_LEN+IP_HDR_LEN;
         printf("[!!!] last unacked seq %ul\n",stream_data->last_unacked_seq );
         reply_hdr->header_len = 6;
         reply_hdr->fin=1;
-				reply_hdr->ack=1;
+        /* reply_hdr->ack=1; */
         reply_hdr->ack_seq = htonl(stream_data->last_unacked_seq);
         reply_hdr->seq = htonl(stream_data->last_unacked_seq);// Increment Seq
         stream_data->last_unacked_seq = stream_data->last_unacked_seq+1;
