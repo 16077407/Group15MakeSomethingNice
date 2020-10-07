@@ -288,7 +288,7 @@ int close (int sockfd){
         printf("[!!!] last unacked seq %ul\n",stream_data->last_unacked_seq );
         reply_hdr->header_len = 6;
         reply_hdr->fin=1;
-        reply_hdr->ack=1;
+        /* reply_hdr->ack=1; */
         reply_hdr->ack_seq = htonl(stream_data->last_unacked_seq);
         reply_hdr->seq = htonl(stream_data->last_unacked_seq);// Increment Seq
         stream_data->last_unacked_seq = stream_data->last_unacked_seq+1;
