@@ -237,7 +237,7 @@ int tcp_rx(struct subuff *sub){
                 printf("TCP SYN ACK was not correct, %u!=%u\n", ntohl(tcp_header->ack_seq), stream_data->last_unacked_seq);
                 goto drop_pkt;
             }
-        case 2: // We initiated the FIN and expect a FIN ACK or ACK
+        case 3: // We initiated the FIN and expect a FIN ACK or ACK
             if (tcp_header->fin && tcp_header->ack) {
                 printf("[!]%s\n", " Received a FIN-ACK from server");
 
