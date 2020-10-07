@@ -214,8 +214,7 @@ int tcp_rx(struct subuff *sub){
             // STATE: HANDSHAKE
             if (ntohl(tcp_header->ack_seq) == stream_data->last_seq_sent+1) {
                 if (tcp_header->ack && tcp_header->syn) {
-                    // 
-                    stream_data->last_seq_acked=tcp_header->seq+1;
+                    stream_data->last_seq_acked=tcp_header->ack_seq;
                     struct subuff* synack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
                     struct tcphdr *reply_hdr = (struct tcphdr *)synack->data;
                     memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
@@ -253,7 +252,8 @@ int tcp_rx(struct subuff *sub){
                 stream_data->last_seq_acked = ntohl(tcp_header->seq);
             } else if (tcp_header->psh) {
                 // Packet Data?
-            } 
+            }
+            break; 
         case 3: // We initiated the FIN and expect a FIN ACK or ACK
             // STATE: CLOSING
             if (tcp_header->fin && tcp_header->ack) {
@@ -285,7 +285,7 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
         reply_hdr->psh = 1;
         reply_hdr->ack = 1;
         reply_hdr->seq = htonl(stream_data->last_seq_acked+1);
-        reply_hdr->ack_seq = reply_hdr->seq;
+        reply_hdr->ack_seq = htonl(stream_data->last_seq_acked);
         memcpy(send->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN, buf, payload_accepted);
 
         reply_hdr->csum = 0;
@@ -299,7 +299,7 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
         }
         // Wait on state->last_unacked
         stream_data->last_seq_sent = stream_data->last_seq_acked+1;
-        while(stream_data->last_seq_acked!=reply_hdr->seq) {
+        while(stream_data->last_seq_sent!=stream_data->last_seq_acked) {
             sleep(1);
         }
         return (ip_output_ret-TCP_HDR_LEN-IP_HDR_LEN-ETH_HDR_LEN);
