@@ -194,10 +194,10 @@ int tcp_rx(struct subuff *sub){
     struct tcphdr *tcp_header = (struct tcphdr *)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
     struct tcp_stream_info *stream_data = open_streams_port[ntohs(tcp_header->dstport)];
 
-    if (ntohl(tcp_header->ack_seq) == stream_data->last_unacked_seq+1) {
-        // VALID PACKET ORDERING CHECKED
-        switch (stream_data->state) {
-            case 1: // EXPECTING SYN-ACK
+    // VALID PACKET ORDERING CHECKED
+    switch (stream_data->state) {
+        case 1: // EXPECTING SYN-ACK
+            if (ntohl(tcp_header->ack_seq) == stream_data->last_unacked_seq+1) {
                 if (tcp_header->ack && tcp_header->syn) { 
                     stream_data->last_unacked_seq=tcp_header->seq+1;
 
@@ -231,20 +231,20 @@ int tcp_rx(struct subuff *sub){
                     if (VERBOSE) printf("[!] Dropping packet, not expected by state=%d\n",stream_data->state);
                     goto drop_pkt;
                 }
-            case 2: // We initiated the FIN and expect a FIN ACK or ACK
-                if (tcp_header->fin && tcp_header->ack) {
-                    printf("[!]%s\n", " Received a FIN-ACK from server");
+            } else {
+                printf("TCP SYN ACK was not correct, %u!=%u\n", ntohl(tcp_header->ack_seq), stream_data->last_unacked_seq);
+            }
+        case 2: // We initiated the FIN and expect a FIN ACK or ACK
+            if (tcp_header->fin && tcp_header->ack) {
+                printf("[!]%s\n", " Received a FIN-ACK from server");
 
-                } else if (tcp_header->ack) {
-                    // The server still sends data so handle this state (FIN-WAIT-2)
-                    printf("[!]%s\n", "There is an ACK after initiating the FIN");
-                }
-            default: // ESTABLISHED connection, appending data to stream buffer
-                goto drop_pkt;
+            } else if (tcp_header->ack) {
+                // The server still sends data so handle this state (FIN-WAIT-2)
+                printf("[!]%s\n", "There is an ACK after initiating the FIN");
+            }
+        default: // ESTABLISHED connection, appending data to stream buffer
+            goto drop_pkt;
         }
-    } else {
-        printf("TCP SYN ACK was not correct, %u!=%u\n", ntohl(tcp_header->ack_seq), stream_data->last_unacked_seq);
-    }
 drop_pkt:
     free_sub(sub);
 }
