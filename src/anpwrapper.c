@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define VERBOSE 0
+#define VERBOSE 1
 
 struct tcp_stream_info *open_streams_port[1<<16-1];
 struct tcp_stream_info *open_streams_fd[MAX_CUSTOM_TCP_FD-MIN_CUSTOM_TCP_FD];
@@ -233,6 +233,7 @@ int tcp_rx(struct subuff *sub){
                 }
             } else {
                 printf("TCP SYN ACK was not correct, %u!=%u\n", ntohl(tcp_header->ack_seq), stream_data->last_unacked_seq);
+                goto drop_pkt;
             }
         case 2: // We initiated the FIN and expect a FIN ACK or ACK
             if (tcp_header->fin && tcp_header->ack) {
