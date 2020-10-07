@@ -249,7 +249,7 @@ int tcp_rx(struct subuff *sub){
             // STATE: ESTABLISHED
             if (tcp_header->ack) {
                 // Packet Ack
-                stream_data->last_seq_acked = ntohl(tcp_header->seq);
+                stream_data->last_seq_acked = ntohl(tcp_header->ack_seq);
             } else if (tcp_header->psh) {
                 // Packet Data?
             }
