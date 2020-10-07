@@ -148,12 +148,12 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
             // Sent some bytes?
             stream_data->state=1;
             while(stream_data->state<2 && stream_data->state>=0) {
-                if (VERBOSE) printf("[~] Waiting on state change, cur=%d, expected=>1\n", stream_data->state);
+                if (VERBOSE) printf("[~] Waiting on state change, cur=%d, expected=>2\n", stream_data->state);
                 sleep(2);
             }
             if (VERBOSE) printf("[~] Done waiting, reached state %d\n",stream_data->state);
             if (stream_data->state>=0) return 0;
-            if (VERBOSE) printf("[!] Unable to make connection with destinationhost.\n");
+            if (VERBOSE) printf("[!] Unable to make connection with destination host.\n");
         } else if (return_ip_out==-1){
             printf("[!] No route to host?\n");
         } else {
@@ -207,17 +207,17 @@ int tcp_rx(struct subuff *sub){
     struct tcphdr *tcp_header = (struct tcphdr *)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
     struct tcp_stream_info *stream_data = open_streams_port[ntohs(tcp_header->dstport)];
 
-
     printf("[!!] Recieved a packet while stream is in state %d\n", stream_data->state);
-    // VALID PACKET ORDERING CHECKED
+    
     switch (stream_data->state) {
-        case 1: // EXPECTING SYN-ACK
+        case 1:
+            // STATE: HANDSHAKE
             if (ntohl(tcp_header->ack_seq) == stream_data->last_unacked_seq+1) {
-                if (tcp_header->ack && tcp_header->syn) { 
+                if (tcp_header->ack && tcp_header->syn) {
+                    // 
                     stream_data->last_unacked_seq=tcp_header->seq+1;
-
                     struct subuff* synack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
-                    struct tcphdr *reply_hdr = (struct tcphdr *)synack->data;//(synack->head+ETH_HDR_LEN+IP_HDR_LEN);
+                    struct tcphdr *reply_hdr = (struct tcphdr *)synack->data;
                     memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
                     uint16_t storage = reply_hdr->dstport;
                     reply_hdr->dstport = reply_hdr->srcport;
@@ -232,7 +232,7 @@ int tcp_rx(struct subuff *sub){
                     reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
 
                     ip_output(ip_header->saddr, synack);
-                    stream_data->state+=1;
+                    stream_data->state=2; // Move into state Established
                     break;
                 } else if (tcp_header->rst || tcp_header->fin) {
                     // Teardown/End connection
@@ -247,10 +247,18 @@ int tcp_rx(struct subuff *sub){
                 printf("TCP SYN ACK was not correct, %u!=%u\n", ntohl(tcp_header->ack_seq), stream_data->last_unacked_seq);
                 goto drop_pkt;
             }
+        case 2:
+            // STATE: ESTABLISHED
+            if (tcp_header->ack) {
+                // Packet Ack
+                stream_data->last_unacked_seq = ntohl(tcp_header->seq);
+            } else if (tcp_header->psh) {
+                // Packet Data?
+            } 
         case 3: // We initiated the FIN and expect a FIN ACK or ACK
+            // STATE: CLOSING
             if (tcp_header->fin && tcp_header->ack) {
                 printf("[!]%s\n", " Received a FIN-ACK from server");
-
             } else if (tcp_header->ack) {
                 // The server still sends data so handle this state (FIN-WAIT-2)
                 printf("[!]%s\n", "There is an ACK after initiating the FIN");
@@ -274,10 +282,11 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
         if (payload_accepted>TCP_MSS_SET) payload_accepted = TCP_MSS_SET;
 
         struct subuff* send = tcp_data(stream_data, stream_data->dst_addr, stream_data->dst_port, payload_accepted);
-        struct tcphdr *reply_hdr = (struct tcphdr *)send->data; //(send->head+ETH_HDR_LEN+IP_HDR_LEN);
+        struct tcphdr *reply_hdr = (struct tcphdr *)send->data;
         reply_hdr->psh = 1;
-        reply_hdr->seq = stream_data->last_unacked_seq;
-        reply_hdr->ack_seq = stream_data->last_unacked_seq;
+        reply_hdr->ack = 1;
+        reply_hdr->seq = htonl(stream_data->last_unacked_seq);
+        reply_hdr->ack_seq = reply_hdr->seq;
         memcpy(send->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN, buf, payload_accepted);
 
         reply_hdr->csum = 0;
@@ -285,9 +294,15 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
         send->len += payload_accepted;
 
         int ip_output_ret = ip_output(ntohl(stream_data->dst_addr), send);
-        if (ip_output_ret>0) return (ip_output_ret-TCP_HDR_LEN-IP_HDR_LEN-ETH_HDR_LEN);
-        printf("[!] Err sending: %d\n", ip_output_ret);
-        return ip_output_ret;
+        if (ip_output_ret<=0) {
+            printf("[!] Err sending: %d\n", ip_output_ret);
+            return ip_output_ret;
+        }
+        // Wait on state->last_unacked
+        while(stream_data->last_unacked_seq==reply_hdr->seq) {
+            sleep(1);
+        }
+        return (ip_output_ret-TCP_HDR_LEN-IP_HDR_LEN-ETH_HDR_LEN);
     }
     // the default path
     return _send(sockfd, buf, len, flags);
