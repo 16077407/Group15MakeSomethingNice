@@ -207,8 +207,9 @@ int tcp_rx(struct subuff *sub){
     struct tcphdr *tcp_header = (struct tcphdr *)(sub->head + ETH_HDR_LEN + IP_HDR_LEN);
     struct tcp_stream_info *stream_data = open_streams_port[ntohs(tcp_header->dstport)];
 
+    if (stream_data==NULL) return -1;
+
     printf("[!!] Recieved a packet while stream is in state %d\n", stream_data->state);
-    
     switch (stream_data->state) {
         case 1:
             // STATE: HANDSHAKE
@@ -253,9 +254,12 @@ int tcp_rx(struct subuff *sub){
             if (tcp_header->ack) {
                 // Packet Ack
                 stream_data->last_seq_acked = ntohl(tcp_header->ack_seq); 
-                printf("[@] Last Sent: %ul, recieved ACK: %ul\n", stream_data->last_seq_sent, stream_data->last_seq_acked);
-            } else if (tcp_header->psh) {
-                // Packet Data?
+                if (VERBOSE) printf("[@] Last Sent: %ul, recieved ACK: %ul\n", stream_data->last_seq_sent, stream_data->last_seq_acked);
+            }
+            // Both read/process ACK, but also accept data if available 
+            if (tcp_header->psh || ip_header->len>TCP_HDR_LEN) {
+                void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
+                printf("[GOT PAYLOAD] %x\n", (uint16_t)packet_payload);
             }
             break; 
         case 3: // We initiated the FIN and expect a FIN ACK or ACK
@@ -266,7 +270,7 @@ int tcp_rx(struct subuff *sub){
                 // The server still sends data so handle this state (FIN-WAIT-2)
                 printf("[!]%s\n", "There is an ACK after initiating the FIN");
             }
-        default: // ESTABLISHED connection, appending data to stream buffer
+        default: // should not get here, weird packet, weird state
             goto drop_pkt;
         }
 drop_pkt:
@@ -304,7 +308,6 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
         // Wait on state->last_unacked
         stream_data->last_seq_sent = stream_data->last_seq_sent+payload_accepted;
         while(stream_data->last_seq_sent!=stream_data->last_seq_acked) {
-            printf("[@] Sent: %ul, ACKd: %ul\n", stream_data->last_seq_sent, stream_data->last_seq_acked);
             sleep(1);
         }
         return (ip_output_ret-TCP_HDR_LEN-IP_HDR_LEN-ETH_HDR_LEN);
