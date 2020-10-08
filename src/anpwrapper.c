@@ -302,7 +302,7 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
             return ip_output_ret;
         }
         // Wait on state->last_unacked
-        stream_data->last_seq_sent = stream_data->last_seq_acked+payload_accepted;
+        stream_data->last_seq_sent = stream_data->last_seq_sent+payload_accepted;
         while(stream_data->last_seq_sent!=stream_data->last_seq_acked) {
             printf("[@] Sent: %ul, ACKd: %ul\n", stream_data->last_seq_sent, stream_data->last_seq_acked);
             sleep(1);
