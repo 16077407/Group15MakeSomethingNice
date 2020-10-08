@@ -214,7 +214,7 @@ int tcp_rx(struct subuff *sub){
             // STATE: HANDSHAKE
             if (ntohl(tcp_header->ack_seq) == stream_data->last_seq_sent+1) {
                 if (tcp_header->ack && tcp_header->syn) {
-                    stream_data->last_seq_acked=tcp_header->ack_seq;
+                    stream_data->last_seq_acked=ntohl(tcp_header->ack_seq);
                     struct subuff* synack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
                     struct tcphdr *reply_hdr = (struct tcphdr *)synack->data;
                     memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
