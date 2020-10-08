@@ -252,7 +252,8 @@ int tcp_rx(struct subuff *sub){
             debug_tcp_hdr(tcp_header);
             if (tcp_header->ack) {
                 // Packet Ack
-                stream_data->last_seq_acked = ntohl(tcp_header->ack_seq);
+                stream_data->last_seq_acked = ntohl(tcp_header->ack_seq); 
+                printf("[@] Last Sent: %ul, recieved ACK: %ul\n", stream_data->last_seq_sent, stream_data->last_seq_acked);
             } else if (tcp_header->psh) {
                 // Packet Data?
             }
