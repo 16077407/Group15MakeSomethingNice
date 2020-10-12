@@ -293,6 +293,7 @@ int tcp_rx(struct subuff *sub){
 
                 ip_output(ip_header->saddr, ack);
                 break;
+              }
         default: // should not get here, weird packet, weird state
             goto drop_pkt;
         }
