@@ -264,12 +264,35 @@ int tcp_rx(struct subuff *sub){
             break; 
         case 3: // We initiated the FIN and expect a FIN ACK or ACK
             // STATE: CLOSING
-            if (tcp_header->fin && tcp_header->ack) {
-                printf("[!]%s\n", " Received a FIN-ACK from server");
-            } else if (tcp_header->ack) {
+           // if (tcp_header->fin && tcp_header->ack) {
+            //    printf("[!]%s\n", " Received a FIN-ACK from server");
+            //} else if (tcp_header->ack) {
                 // The server still sends data so handle this state (FIN-WAIT-2)
-                printf("[!]%s\n", "There is an ACK after initiating the FIN");
-            }
+           //     printf("[!]%s\n", "There is an ACK after initiating the FIN");
+           // }
+              if (tcp_header->fin && tcp_header->ack) {
+                printf("[!]%s\n", " Received a FIN-ACK from server");
+
+                stream_data->last_seq_acked=ntohl(tcp_header->ack_seq);
+                struct subuff* ack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
+                struct tcphdr *reply_hdr = (struct tcphdr *)ack->data;
+                memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
+                uint16_t storage = reply_hdr->dstport;
+                reply_hdr->dstport = reply_hdr->srcport;
+                reply_hdr->srcport = storage;
+                reply_hdr->header_len = 6;
+                reply_hdr->syn=0;
+                reply_hdr->fin=0;
+                reply_hdr->ack=1;
+                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+1);
+                stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
+                reply_hdr->seq = tcp_header->ack_seq;// Increment Seq
+                stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
+                reply_hdr->csum = 0;
+                reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
+
+                ip_output(ip_header->saddr, ack);
+                break;
         default: // should not get here, weird packet, weird state
             goto drop_pkt;
         }
