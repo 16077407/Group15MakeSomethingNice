@@ -251,6 +251,7 @@ int tcp_rx(struct subuff *sub){
                 printf("TCP SYN ACK was not correct, %u!=%u\n", ntohl(tcp_header->ack_seq), stream_data->last_seq_sent);
                 goto drop_pkt;
             }
+            break;
         case 2:
             // STATE: ESTABLISHED
             debug_tcp_hdr(tcp_header);
@@ -280,7 +281,7 @@ int tcp_rx(struct subuff *sub){
                 reply_hdr->ack=1;
                 reply_hdr->seq = tcp_header->ack_seq; // Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
-                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size);
+                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size+1);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
                 reply_hdr->option_type = 1;
                 reply_hdr->option_length=1;
