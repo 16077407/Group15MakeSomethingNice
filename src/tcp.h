@@ -13,7 +13,7 @@
 #define TCP_SYN 0x08
 #define TCP_FIN 0x10
 #define TCP_HDR_LEN sizeof(struct tcphdr)
-#define TCP_MSS_SET 1500
+#define TCP_MSS_SET 5000
 
 #define DEBUG_TCP
 #ifdef DEBUG_TCP
