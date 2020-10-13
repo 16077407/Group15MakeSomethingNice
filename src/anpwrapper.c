@@ -136,7 +136,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
         stream_data->last_seq_sent = stream_data->initial_seq;
         tcp_hdr->ack_seq=0;
         tcp_hdr->syn=1;
-        tcp_hdr->header_len=6;//waarom hier 6? welke optie is gezet? | Alleen MSS, de actuelle tcp header structuur heeft dus 8 extra bytes 
+        tcp_hdr->header_len=6;
         tcp_hdr->option_type = 2;
         tcp_hdr->option_length = 4;
         tcp_hdr->option_value = htons(TCP_MSS_SET);
@@ -257,10 +257,11 @@ int tcp_rx(struct subuff *sub){
             debug_tcp_hdr(tcp_header);
             if (tcp_header->ack) {
                 // Packet Ack
-                stream_data->last_seq_acked = ntohl(tcp_header->ack_seq); 
-                if (VERBOSE) printf("[@] Last Sent: %ul, recieved ACK: %ul\n", stream_data->last_seq_sent, stream_data->last_seq_acked);
+                stream_data->last_seq_acked = ntohl(tcp_header->ack_seq);
+
+                if (VERBOSE) printf("[@] Last Sent: %ul, recieved ACK: %ul\n", stream_data->last_seq_sent, ntohl(stream_data->last_seq_acked));
             }
-            // Both read/process ACK, but also accept data if available 
+            // Both read/process ACK, but also accept data if available
             if (ip_header->len-(IP_HDR_LEN-TCP_HDR_LEN+4)) {
                 void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
                 int packet_payload_size = ip_header->len-IP_HDR_LEN-TCP_HDR_LEN+4;
@@ -276,33 +277,32 @@ int tcp_rx(struct subuff *sub){
                 uint16_t storage = reply_hdr->dstport;
                 reply_hdr->dstport = reply_hdr->srcport;
                 reply_hdr->srcport = stream_data->stream_port;
-                reply_hdr->header_len = 5;
+                reply_hdr->header_len = 6;
                 reply_hdr->psh=0;
                 reply_hdr->ack=1;
 
                 // STATUS: WHAT THE FUCK IS GOING ON
                 reply_hdr->seq = tcp_header->ack_seq; // Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
-                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size);
+                // reply_hdr->ack_seq = htonl(ntohl(tcp_header->ack_seq)+packet_payload_size);
+                printf("!!!! TCP HEADER ACK NUM !!!!!:%ul, %ul, %ul\n", tcp_header->ack_seq, ntohl(tcp_header->ack_seq), htonl(ntohl(tcp_header->ack_seq)));
+                reply_hdr->ack_seq = htonl(ntohl(tcp_header->ack_seq)+packet_payload_size);
+                // uint32_t test = 4097+1460+1460+1176;
+                // reply_hdr->ack_seq = htonl(test);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
-                printf("Reply_hdr: %d \n", reply_hdr->seq);
-                printf("stream data: %d \n  ", stream_data->last_seq_sent);
-                printf("reply hdr ack seq: %d \n", reply_hdr->ack_seq);
-                printf("stream_datalast ack send: %d \n ", stream_data->last_ack_sent);
-
                 // FIXME: No idea why the sequence nums are wrong, PLEASE PLEASE FIGURE THIS OUT
-                
+
                 reply_hdr->option_type = 1;
                 reply_hdr->option_length=1;
                 reply_hdr->option_value=0x100;
                 reply_hdr->csum = 0;
-                reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr)-4, IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
+                reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
 
-                ack->len-=4;
+                // ack->len-=4;
                 debug_tcp_hdr(reply_hdr);
                 ip_output(ip_header->saddr, ack);
 
-                return 1;
+                break;
             }
             break;
         case 3: // We initiated the FIN and expect a FIN ACK or ACK
@@ -330,6 +330,11 @@ int tcp_rx(struct subuff *sub){
 
                 ip_output(ip_header->saddr, ack);
                 break;
+              } else if (tcp_header->ack) {
+                  // The server still sends data so handle this state (FIN-WAIT-2)
+                  printf("[!]%s\n", "There is an ACK after initiating the FIN");
+                  // Implement futher logic
+                  goto drop_pkt;
               }
         default: // should not get here, weird packet, weird state
             goto drop_pkt;
@@ -355,6 +360,7 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
         reply_hdr->ack = 1;
         reply_hdr->seq = htonl(stream_data->last_seq_acked);
         reply_hdr->ack_seq = htonl(stream_data->last_ack_sent);
+        // stream_data->last_ack_sent = ntohl(reply_hdr->seq);
         memcpy(send->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN, buf, payload_accepted);
 
         reply_hdr->csum = 0;
@@ -392,7 +398,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
         struct subuff *current = sub_peek(stream_data->rx_in); // Check next payload
         int current_size = (((struct iphdr *)(current->head+ETH_HDR_LEN))->len)-(IP_HDR_LEN+TCP_HDR_LEN-4); // get size
         void *current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN-4; // get start of data
-        while(read_out+current_size<=len) { // Check if less than maximum requested size 
+        while(read_out+current_size<=len) { // Check if less than maximum requested size
             printf("[!!] Size after copy %d\n", current_size+read_out);
             printf("[!!!!] Copying payload to buffer\n");
             memcpy(buf+read_out, current_start, current_size); // Copy into target buffer
@@ -404,7 +410,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
             current_size = (((struct iphdr *)(current->head+ETH_HDR_LEN))->len)-(IP_HDR_LEN+TCP_HDR_LEN-4); // get size
         }
         sleep(1);
-        return read_out; 
+        return read_out;
     }
     // the default path
     return _recv(sockfd, buf, len, flags);
@@ -451,4 +457,3 @@ void _function_override_init()
     _recv = dlsym(RTLD_NEXT, "recv");
     _close = dlsym(RTLD_NEXT, "close");
 }
-
