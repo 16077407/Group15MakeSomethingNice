@@ -273,12 +273,11 @@ int tcp_rx(struct subuff *sub){
                 reply_hdr->dstport = reply_hdr->srcport;
                 reply_hdr->srcport = stream_data->stream_port;
                 reply_hdr->header_len = 6;
-                reply_hdr->syn=0;
-                reply_hdr->fin=0;
+                reply_hdr->psh=0;
                 reply_hdr->ack=1;
                 reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
-                reply_hdr->seq = tcp_header->ack_seq;// Increment Seq
+                reply_hdr->seq = htonl(ntohl(reply_hdr->seq)+packet_payload_size); // Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
                 reply_hdr->option_type = 1;
                 reply_hdr->option_length=1;
