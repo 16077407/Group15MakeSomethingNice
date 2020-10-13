@@ -260,7 +260,7 @@ int tcp_rx(struct subuff *sub){
                 if (VERBOSE) printf("[@] Last Sent: %ul, recieved ACK: %ul\n", stream_data->last_seq_sent, stream_data->last_seq_acked);
             }
             // Both read/process ACK, but also accept data if available 
-            if (tcp_header->psh || ip_header->len-(IP_HDR_LEN-TCP_HDR_LEN-4)) {
+            if (tcp_header->psh || ip_header->len-(IP_HDR_LEN-TCP_HDR_LEN+4)) {
                 void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
                 int packet_payload_size = ip_header->len-IP_HDR_LEN-TCP_HDR_LEN+4;
                 printf("[!!!!] Payload SIZE %d\n", packet_payload_size);
@@ -278,9 +278,9 @@ int tcp_rx(struct subuff *sub){
                 reply_hdr->header_len = 6;
                 reply_hdr->psh=0;
                 reply_hdr->ack=1;
-                reply_hdr->seq = htonl(stream_data->last_seq_acked); // Increment Seq
+                reply_hdr->seq = tcp_header->ack_seq; // Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
-                reply_hdr->ack_seq = htonl(stream_data->last_ack_sent+packet_payload_size);
+                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
                 reply_hdr->option_type = 1;
                 reply_hdr->option_length=1;
@@ -379,8 +379,8 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
         int read_out = 0;
 
         struct subuff *current = sub_peek(stream_data->rx_in); // Check next payload
-        int current_size = (((struct iphdr *)(current->head+ETH_HDR_LEN))->len)-IP_HDR_LEN-TCP_HDR_LEN+4; // get size
-        void *current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN; // get start of data
+        int current_size = (((struct iphdr *)(current->head+ETH_HDR_LEN))->len)-(IP_HDR_LEN-TCP_HDR_LEN+4); // get size
+        void *current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN-4; // get start of data
         printf("[!!] Size after copy %d\n", current_size+read_out);
         while(read_out+current_size<=len) { // Check if less than maximum requested size
             printf("[!!!!] Copying payload to buffer\n");
