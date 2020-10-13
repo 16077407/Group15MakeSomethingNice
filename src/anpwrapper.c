@@ -218,6 +218,7 @@ int tcp_rx(struct subuff *sub){
             if (ntohl(tcp_header->ack_seq) == stream_data->last_seq_sent+1) {
                 if (tcp_header->ack && tcp_header->syn) {
                     stream_data->last_seq_acked=ntohl(tcp_header->ack_seq);
+                    if (tcp_header->option_type==2) stream_data->mss_set = tcp_header->option_value;
                     struct subuff* synack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
                     struct tcphdr *reply_hdr = (struct tcphdr *)synack->data;
                     memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
@@ -261,9 +262,8 @@ int tcp_rx(struct subuff *sub){
             // Both read/process ACK, but also accept data if available 
             if (tcp_header->psh || sub->dlen>(TCP_HDR_LEN+IP_HDR_LEN+ETH_HDR_LEN)) {
                 void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
-                printf("[@] ENQUEUE NEW PACKET (size %ld)\n", ip_header->len-IP_HDR_LEN-TCP_HDR_LEN+4);
+                int packet_payload_size = ip_header->len-IP_HDR_LEN-TCP_HDR_LEN+4;
                 stream_data->bytes_rx+=ip_header->len-TCP_HDR_LEN-IP_HDR_LEN+4;
-                sub_queue_tail(stream_data->rx_in, sub);
                 sub_queue_tail(stream_data->rx_in, sub);
 
                 struct subuff* ack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
@@ -271,15 +271,18 @@ int tcp_rx(struct subuff *sub){
                 memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
                 uint16_t storage = reply_hdr->dstport;
                 reply_hdr->dstport = reply_hdr->srcport;
-                reply_hdr->srcport = storage;
+                reply_hdr->srcport = stream_data->stream_port;
                 reply_hdr->header_len = 6;
                 reply_hdr->syn=0;
                 reply_hdr->fin=0;
                 reply_hdr->ack=1;
-                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+1);
+                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
                 reply_hdr->seq = tcp_header->ack_seq;// Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
+                reply_hdr->option_type = 1;
+                reply_hdr->option_length=1;
+                reply_hdr->option_value=0x100;
                 reply_hdr->csum = 0;
                 reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
 
