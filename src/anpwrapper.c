@@ -361,6 +361,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
         void *current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN; // get start of data
 
         while(read_out+current_size<=len) { // Check if less than maximum requested size
+            printf("[!!!!] Copying payload to buffer\n");
             memcpy(buf+read_out, current_start, current_size); // Copy into target buffer
             read_out+=current_size; // increment
             sub_dequeue(stream_data->rx_in); // discard peeked packet
