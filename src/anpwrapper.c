@@ -248,7 +248,7 @@ int tcp_rx(struct subuff *sub){
                     goto drop_pkt;
                 }
             } else {
-                printf("TCP SYN ACK was not correct, %u!=%u\n", ntohl(tcp_header->ack_seq), stream_data->last_seq_sent);
+                /* printf("TCP SYN ACK was not correct, %u!=%u\n", ntohl(tcp_header->ack_seq), stream_data->last_seq_sent); */
                 goto drop_pkt;
             }
             break;
@@ -265,12 +265,12 @@ int tcp_rx(struct subuff *sub){
             if (ip_header->len-(IP_HDR_LEN-TCP_HDR_LEN+4)) {
                 void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
                 int packet_payload_size = ip_header->len-IP_HDR_LEN-TCP_HDR_LEN+4;
-                printf("[!!!!] Payload SIZE %d\n", packet_payload_size);
+                /* printf("[!!!!] Payload SIZE %d\n", packet_payload_size); */
                 stream_data->bytes_rx+=packet_payload_size;
                 sub_queue_tail(stream_data->rx_in, sub);
 
-                if (packet_payload_size==0) return 1;
-                printf("[!!!!!!!!]\n\n");
+                if (packet_payload_size==0 && stream_data->bytes_rx<=0) return 1;
+                /* printf("[!!!!!!!!]\n\n"); */
                 struct subuff* ack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
                 struct tcphdr *reply_hdr = (struct tcphdr *)ack->data;
                 memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
@@ -285,7 +285,7 @@ int tcp_rx(struct subuff *sub){
                 reply_hdr->seq = tcp_header->ack_seq; // Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
                 // reply_hdr->ack_seq = htonl(ntohl(tcp_header->ack_seq)+packet_payload_size);
-                printf("!!!! TCP HEADER ACK NUM !!!!!:%ul, %ul, %ul\n", tcp_header->ack_seq, ntohl(tcp_header->ack_seq), htonl(ntohl(tcp_header->ack_seq)));
+                /* printf("!!!! TCP HEADER ACK NUM !!!!!:%ul, %ul, %ul\n", tcp_header->ack_seq, ntohl(tcp_header->ack_seq), htonl(ntohl(tcp_header->ack_seq))); */
                 reply_hdr->ack_seq = htonl(ntohl(tcp_header->ack_seq)+packet_payload_size);
                 // uint32_t test = 4097+1460+1460+1176;
                 // reply_hdr->ack_seq = htonl(test);
