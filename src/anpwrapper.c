@@ -260,7 +260,7 @@ int tcp_rx(struct subuff *sub){
                 if (VERBOSE) printf("[@] Last Sent: %ul, recieved ACK: %ul\n", stream_data->last_seq_sent, stream_data->last_seq_acked);
             }
             // Both read/process ACK, but also accept data if available 
-            if (tcp_header->psh || ip_header->len-(IP_HDR_LEN-TCP_HDR_LEN-4)) {
+            if (tcp_header->psh && ip_header->len-(IP_HDR_LEN-TCP_HDR_LEN-4)) {
                 void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
                 int packet_payload_size = ip_header->len-IP_HDR_LEN-TCP_HDR_LEN+4;
                 stream_data->bytes_rx+=packet_payload_size;
@@ -278,7 +278,7 @@ int tcp_rx(struct subuff *sub){
                 reply_hdr->ack=1;
                 reply_hdr->seq = htonl(stream_data->last_seq_acked); // Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
-                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size);
+                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+stream_data->bytes_rx);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
                 reply_hdr->option_type = 1;
                 reply_hdr->option_length=1;
