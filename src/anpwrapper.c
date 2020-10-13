@@ -279,7 +279,7 @@ int tcp_rx(struct subuff *sub){
                 reply_hdr->ack=1;
                 reply_hdr->seq = htonl(stream_data->last_seq_acked); // Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
-                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+stream_data->bytes_rx);
+                reply_hdr->ack_seq = htonl(stream_data->last_ack_sent+stream_data->bytes_rx);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
                 reply_hdr->option_type = 1;
                 reply_hdr->option_length=1;
