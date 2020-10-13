@@ -285,6 +285,11 @@ int tcp_rx(struct subuff *sub){
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
                 reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
+                printf("Reply_hdr: %d \n", reply_hdr->seq);
+                printf("stream data: %d \n  ", stream_data->last_seq_sent);
+                printf("reply hdr ack seq: %d \n", reply_hdr->ack_seq);
+                printf("stream_datalast ack send: %d \n ", stream_data->last_ack_sent);
+
                 // FIXME: No idea why the sequence nums are wrong, PLEASE PLEASE FIGURE THIS OUT
                 
                 reply_hdr->option_type = 1;
