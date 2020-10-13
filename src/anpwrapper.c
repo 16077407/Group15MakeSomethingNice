@@ -395,7 +395,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
             sub_dequeue(stream_data->rx_in); // discard peeked packet
             current = sub_peek(stream_data->rx_in); // get next packet
             if (current==NULL) break; // if no next packet, end
-            current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN; // get new packets payload start
+            current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN-4; // get new packets payload start
             current_size = (((struct iphdr *)(current->head+ETH_HDR_LEN))->len)-(IP_HDR_LEN-TCP_HDR_LEN+4); // get size
         }
         sleep(1);
