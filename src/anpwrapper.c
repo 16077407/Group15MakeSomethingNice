@@ -263,10 +263,9 @@ int tcp_rx(struct subuff *sub){
             if (tcp_header->psh || ip_header->len-(IP_HDR_LEN-TCP_HDR_LEN+4)) {
                 void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
                 int packet_payload_size = ip_header->len-IP_HDR_LEN-TCP_HDR_LEN+4;
-                stream_data->bytes_rx+=ip_header->len-TCP_HDR_LEN-IP_HDR_LEN+4;
+                stream_data->bytes_rx+=packet_payload_size;
                 sub_queue_tail(stream_data->rx_in, sub);
 
-                if (!tcp_header->psh) return 1;
                 printf("[!!!!!!!!]\n\n");
                 struct subuff* ack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
                 struct tcphdr *reply_hdr = (struct tcphdr *)ack->data;
@@ -277,9 +276,9 @@ int tcp_rx(struct subuff *sub){
                 reply_hdr->header_len = 6;
                 reply_hdr->psh=0;
                 reply_hdr->ack=1;
-                reply_hdr->seq = tcp_header->ack_seq; // Increment Seq
+                reply_hdr->seq = htonl(ntohl(tcp_header->ack_seq)); // Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
-                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size);
+                reply_hdr->ack_seq = htonl(ntohl(reply_hdr->seq)+packet_payload_size);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
                 reply_hdr->option_type = 1;
                 reply_hdr->option_length=1;
