@@ -267,7 +267,7 @@ int tcp_rx(struct subuff *sub){
                 stream_data->bytes_rx+=packet_payload_size;
                 sub_queue_tail(stream_data->rx_in, sub);
 
-                if (tcp_header->psh!=1) return 1;
+                /* if (tcp_header->psh!=1) return 1; */
                 printf("[!!!!!!!!]\n\n");
                 struct subuff* ack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
                 struct tcphdr *reply_hdr = (struct tcphdr *)ack->data;
@@ -275,12 +275,12 @@ int tcp_rx(struct subuff *sub){
                 uint16_t storage = reply_hdr->dstport;
                 reply_hdr->dstport = reply_hdr->srcport;
                 reply_hdr->srcport = stream_data->stream_port;
-                reply_hdr->header_len = 6;
+                reply_hdr->header_len = 5;
                 reply_hdr->psh=0;
                 reply_hdr->ack=1;
                 reply_hdr->seq = tcp_header->ack_seq; // Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
-                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+stream_data->bytes_rx+1);
+                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size+1);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
                 reply_hdr->option_type = 1;
                 reply_hdr->option_length=1;
@@ -306,7 +306,7 @@ int tcp_rx(struct subuff *sub){
                 uint16_t storage = reply_hdr->dstport;
                 reply_hdr->dstport = reply_hdr->srcport;
                 reply_hdr->srcport = storage;
-                reply_hdr->header_len = 5;
+                reply_hdr->header_len = 6;
                 reply_hdr->syn=0;
                 reply_hdr->fin=0;
                 reply_hdr->ack=1;
