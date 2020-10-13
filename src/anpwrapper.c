@@ -359,7 +359,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
         struct subuff *current = sub_peek(stream_data->rx_in); // Check next payload
         int current_size = (current->len-ETH_HDR_LEN-IP_HDR_LEN-TCP_HDR_LEN); // get size
         void *current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN; // get start of data
-
+        printf("[!!] Size after copy %d\n", current_size+read_out);
         while(read_out+current_size<=len) { // Check if less than maximum requested size
             printf("[!!!!] Copying payload to buffer\n");
             memcpy(buf+read_out, current_start, current_size); // Copy into target buffer
