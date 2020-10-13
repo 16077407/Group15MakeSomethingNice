@@ -83,6 +83,8 @@ int socket(int domain, int type, int protocol) {
         stream->initial_seq = 3149642683;
         stream->stream_port = rand_uint16();
         stream->dst_port = rand_uint16();
+        stream->rx_in = malloc(sizeof(struct subuff_head));
+        sub_queue_init(stream->rx_in);
 
         open_streams_port[stream->stream_port] = stream; // Store for later by port
 
@@ -259,7 +261,8 @@ int tcp_rx(struct subuff *sub){
             // Both read/process ACK, but also accept data if available 
             if (tcp_header->psh || ip_header->len>TCP_HDR_LEN) {
                 void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
-                printf("[GOT PAYLOAD] %x\n", (uint16_t)packet_payload);
+                stream_data->bytes_rx+=ip_header->len-TCP_HDR_LEN-IP_HDR_LEN;
+                sub_queue_tail(stream_data->rx_in, sub);
             }
             break; 
         case 3: // We initiated the FIN and expect a FIN ACK or ACK
@@ -303,7 +306,7 @@ drop_pkt:
 
 // TODO: ANP milestone 5 -- implement the send, recv, and close calls
 ssize_t send(int sockfd, const void *buf, size_t len, int flags)
-{
+{)
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd) {
@@ -344,8 +347,25 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
     //FIXME -- you can remember the file descriptors that you have generated in the socket call and match them here
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd) {
-        //TODO: implement your logic here
-        return -ENOSYS;
+        struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD]; 
+        if (sub_queue_len(stream_data->rx_in)==0) return 0; // No packets to dequeue
+        int read_out = 0;
+
+        struct subuff *current = sub_peek(stream_data->rx_in); // Check next payload
+        int current_size = (current->len-ETH_HDR_LEN-IP_HDR_LEN-TCP_HDR_LEN); // get size
+        void *current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN; // get start of data
+
+        while(read_out+current_size<len) { // Check if less than maximum requested size
+            memcpy(buf+read_out, current_start, current_size); // Copy into target buffer
+            read_out+=current_size; // increment
+            sub_dequeue(stream_data->rx_in); // discard peeked packet
+            current = sub_peek(stream_data->rx_in); // get next packet
+            if (current==NULL) break; // if no next packet, end
+            current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN; // get new packets payload start
+            current_size = (current->len-ETH_HDR_LEN-IP_HDR_LEN-TCP_HDR_LEN); // get payload size
+        }
+
+        return read_out; 
     }
     // the default path
     return _recv(sockfd, buf, len, flags);

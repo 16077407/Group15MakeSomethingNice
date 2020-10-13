@@ -40,7 +40,7 @@ struct tcp_stream_info {
     uint16_t dst_port;
     uint32_t dst_addr;
     uint32_t src_addr;
-    void *rx_in;
+    struct subuff_head *rx_in;
 };
 
 struct subuff *tcp_base(struct tcp_stream_info* stream_data, uint32_t dst_addr, uint16_t dst_port); 
