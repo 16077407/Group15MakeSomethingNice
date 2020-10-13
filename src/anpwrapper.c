@@ -261,19 +261,13 @@ int tcp_rx(struct subuff *sub){
             // Both read/process ACK, but also accept data if available 
             if (tcp_header->psh || sub->dlen>(TCP_HDR_LEN+IP_HDR_LEN+ETH_HDR_LEN)) {
                 void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
-                printf("[@] ENQUEUE NEW PACKET (size %ld)\n", ip_header->len-IP_HDR_LEN-TCP_HDR_LEN);
-                stream_data->bytes_rx+=ip_header->len-TCP_HDR_LEN-IP_HDR_LEN;
+                printf("[@] ENQUEUE NEW PACKET (size %ld)\n", ip_header->len-IP_HDR_LEN-TCP_HDR_LEN+4);
+                stream_data->bytes_rx+=ip_header->len-TCP_HDR_LEN-IP_HDR_LEN+4;
                 sub_queue_tail(stream_data->rx_in, sub);
             }
             break; 
         case 3: // We initiated the FIN and expect a FIN ACK or ACK
             // STATE: CLOSING
-           // if (tcp_header->fin && tcp_header->ack) {
-            //    printf("[!]%s\n", " Received a FIN-ACK from server");
-            //} else if (tcp_header->ack) {
-                // The server still sends data so handle this state (FIN-WAIT-2)
-           //     printf("[!]%s\n", "There is an ACK after initiating the FIN");
-           // }
               if (tcp_header->fin && tcp_header->ack) {
                 printf("[!]%s\n", " Received a FIN-ACK from server");
 
@@ -357,7 +351,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
         int read_out = 0;
 
         struct subuff *current = sub_peek(stream_data->rx_in); // Check next payload
-        int current_size = ((struct iphdr *)(current->head + ETH_HDR_LEN))->len-ETH_HDR_LEN-IP_HDR_LEN-TCP_HDR_LEN; // get size
+        int current_size = (((struct iphdr *)(current->head+ETH_HDR_LEN))->len)-ETH_HDR_LEN-IP_HDR_LEN-TCP_HDR_LEN; // get size
         void *current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN; // get start of data
         printf("[!!] Size after copy %d\n", current_size+read_out);
         while(read_out+current_size<=len) { // Check if less than maximum requested size
