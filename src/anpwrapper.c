@@ -266,6 +266,7 @@ int tcp_rx(struct subuff *sub){
                 stream_data->bytes_rx+=ip_header->len-TCP_HDR_LEN-IP_HDR_LEN+4;
                 sub_queue_tail(stream_data->rx_in, sub);
 
+                printf("[!!!!!!!!]\n\n");
                 struct subuff* ack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
                 struct tcphdr *reply_hdr = (struct tcphdr *)ack->data;
                 memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
