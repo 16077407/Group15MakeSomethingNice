@@ -388,7 +388,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd) {
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
-        printf("[!!!!] QUEUE LEN %d\n", sub_queue_len(stream_data->rx_in));
+        /* printf("[!!!!] QUEUE LEN %d\n", sub_queue_len(stream_data->rx_in)); */
         while (sub_queue_len(stream_data->rx_in)<1) {
             printf("[!] Waiting on new data to return...\n");
             sleep(1);
@@ -399,8 +399,8 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
         int current_size = (((struct iphdr *)(current->head+ETH_HDR_LEN))->len)-(IP_HDR_LEN+TCP_HDR_LEN-4); // get size
         void *current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN-4; // get start of data
         while(read_out+current_size<=len) { // Check if less than maximum requested size
-            printf("[!!] Size after copy %d\n", current_size+read_out);
-            printf("[!!!!] Copying payload to buffer\n");
+            /* printf("[!!] Size after copy %d\n", current_size+read_out); */
+            /* printf("[!!!!] Copying payload to buffer\n"); */
             memcpy(buf+read_out, current_start, current_size); // Copy into target buffer
             read_out+=current_size; // increment
             sub_dequeue(stream_data->rx_in); // discard peeked packet
