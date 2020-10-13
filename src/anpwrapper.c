@@ -352,7 +352,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
         printf("[!!!!] QUEUE LEN %d\n", sub_queue_len(stream_data->rx_in));
         while (sub_queue_len(stream_data->rx_in)<1) {
             printf("[!] Waiting on new data to return...");
-            sleep(10);
+            sleep(1);
         } // No packets to dequeue
         int read_out = 0;
 
@@ -370,7 +370,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
             current_start = current->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN; // get new packets payload start
             current_size = (current->len-ETH_HDR_LEN-IP_HDR_LEN-TCP_HDR_LEN); // get payload size
         }
-
+        sleep(1);
         return read_out; 
     }
     // the default path
