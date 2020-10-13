@@ -286,7 +286,7 @@ int tcp_rx(struct subuff *sub){
                 reply_hdr->option_length=1;
                 reply_hdr->option_value=0x100;
                 reply_hdr->csum = 0;
-                reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
+                reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr)-4, IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
 
                 ack->len-=4;
                 debug_tcp_hdr(reply_hdr);
