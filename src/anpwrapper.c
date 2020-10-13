@@ -348,7 +348,9 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
     bool is_anp_sockfd = MAX_CUSTOM_TCP_FD>sockfd && sockfd>MIN_CUSTOM_TCP_FD;
     if(is_anp_sockfd) {
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD]; 
-        if (sub_queue_len(stream_data->rx_in)==0) return 0; // No packets to dequeue
+        while (sub_queue_len(stream_data->rx_in)==0) {
+            sleep(1);
+        } // No packets to dequeue
         int read_out = 0;
 
         struct subuff *current = sub_peek(stream_data->rx_in); // Check next payload
