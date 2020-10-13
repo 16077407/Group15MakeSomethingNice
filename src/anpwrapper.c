@@ -259,9 +259,9 @@ int tcp_rx(struct subuff *sub){
                 if (VERBOSE) printf("[@] Last Sent: %ul, recieved ACK: %ul\n", stream_data->last_seq_sent, stream_data->last_seq_acked);
             }
             // Both read/process ACK, but also accept data if available 
-            if (tcp_header->psh || sub->len>TCP_HDR_LEN+IP_HDR_LEN+ETH_HDR_LEN) {
+            if (tcp_header->psh || sub->dlen>(TCP_HDR_LEN+IP_HDR_LEN+ETH_HDR_LEN)) {
                 void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
-                printf("[@] ENQUEUE NEW PACKET\n");
+                printf("[@] ENQUEUE NEW PACKET (size %ld)\n", sub->dlen-(TCP_HDR_LEN+IP_HDR_LEN+ETH_HDR_LEN));
                 stream_data->bytes_rx+=ip_header->len-TCP_HDR_LEN-IP_HDR_LEN;
                 sub_queue_tail(stream_data->rx_in, sub);
             }
