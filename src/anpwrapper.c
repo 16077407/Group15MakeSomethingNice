@@ -267,7 +267,7 @@ int tcp_rx(struct subuff *sub){
                 stream_data->bytes_rx+=packet_payload_size;
                 sub_queue_tail(stream_data->rx_in, sub);
 
-                if (tcp_header->psh!=1) return 1;
+                /* if (tcp_header->psh!=1) return 1; */
                 printf("[!!!!!!!!]\n\n");
                 struct subuff* ack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
                 struct tcphdr *reply_hdr = (struct tcphdr *)ack->data;
