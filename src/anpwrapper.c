@@ -264,8 +264,9 @@ int tcp_rx(struct subuff *sub){
                 printf("[@] ENQUEUE NEW PACKET (size %ld)\n", ip_header->len-IP_HDR_LEN-TCP_HDR_LEN+4);
                 stream_data->bytes_rx+=ip_header->len-TCP_HDR_LEN-IP_HDR_LEN+4;
                 sub_queue_tail(stream_data->rx_in, sub);
+                return 1;
             }
-            break; 
+            break;
         case 3: // We initiated the FIN and expect a FIN ACK or ACK
             // STATE: CLOSING
               if (tcp_header->fin && tcp_header->ack) {
