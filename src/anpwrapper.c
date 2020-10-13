@@ -261,6 +261,7 @@ int tcp_rx(struct subuff *sub){
             // Both read/process ACK, but also accept data if available 
             if (tcp_header->psh || ip_header->len>TCP_HDR_LEN) {
                 void *packet_payload = sub->head+ETH_HDR_LEN+IP_HDR_LEN+TCP_HDR_LEN;
+                printf("[@] ENQUEUE NEW PACKET\n");
                 stream_data->bytes_rx+=ip_header->len-TCP_HDR_LEN-IP_HDR_LEN;
                 sub_queue_tail(stream_data->rx_in, sub);
             }
