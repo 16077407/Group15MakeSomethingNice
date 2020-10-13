@@ -264,6 +264,27 @@ int tcp_rx(struct subuff *sub){
                 printf("[@] ENQUEUE NEW PACKET (size %ld)\n", ip_header->len-IP_HDR_LEN-TCP_HDR_LEN+4);
                 stream_data->bytes_rx+=ip_header->len-TCP_HDR_LEN-IP_HDR_LEN+4;
                 sub_queue_tail(stream_data->rx_in, sub);
+                sub_queue_tail(stream_data->rx_in, sub);
+
+                struct subuff* ack = tcp_base(stream_data, ip_header->saddr, ntohs(tcp_header->srcport));
+                struct tcphdr *reply_hdr = (struct tcphdr *)ack->data;
+                memcpy(reply_hdr, tcp_header, TCP_HDR_LEN);
+                uint16_t storage = reply_hdr->dstport;
+                reply_hdr->dstport = reply_hdr->srcport;
+                reply_hdr->srcport = storage;
+                reply_hdr->header_len = 6;
+                reply_hdr->syn=0;
+                reply_hdr->fin=0;
+                reply_hdr->ack=1;
+                reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+1);
+                stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
+                reply_hdr->seq = tcp_header->ack_seq;// Increment Seq
+                stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
+                reply_hdr->csum = 0;
+                reply_hdr->csum = do_tcp_csum((void *)reply_hdr, sizeof(struct tcphdr), IPP_TCP, stream_data->src_addr, stream_data->dst_addr);
+
+                ip_output(ip_header->saddr, ack);
+
                 return 1;
             }
             break;
@@ -346,7 +367,7 @@ ssize_t recv (int sockfd, void *buf, size_t len, int flags){
         struct tcp_stream_info *stream_data = open_streams_fd[sockfd-MIN_CUSTOM_TCP_FD];
         printf("[!!!!] QUEUE LEN %d\n", sub_queue_len(stream_data->rx_in));
         while (sub_queue_len(stream_data->rx_in)<1) {
-            printf("[!] Waiting on new data to return...");
+            printf("[!] Waiting on new data to return...\n");
             sleep(1);
         } // No packets to dequeue
         int read_out = 0;
