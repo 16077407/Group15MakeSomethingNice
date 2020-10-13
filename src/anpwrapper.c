@@ -278,7 +278,7 @@ int tcp_rx(struct subuff *sub){
                 reply_hdr->header_len = 5;
                 reply_hdr->psh=0;
                 reply_hdr->ack=1;
-                reply_hdr->seq = tcp_header->ack_seq; // Increment Seq
+                reply_hdr->seq = htonl(ntohl(tcp_header->ack_seq)+packet_payload_size); // Increment Seq
                 stream_data->last_seq_sent = ntohl(tcp_header->ack_seq);
                 reply_hdr->ack_seq = htonl(ntohl(tcp_header->seq)+packet_payload_size+1);
                 stream_data->last_ack_sent = ntohl(reply_hdr->ack_seq);
